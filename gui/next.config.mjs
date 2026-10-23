@@ -22,23 +22,24 @@ const nextConfig = {
   },
 
   /**
-   * Proxy /api and Socket.IO to Express when both share the public domain.
-   * Set API_INTERNAL_URL in Coolify (e.g. http://server:4000 or http://127.0.0.1:4000).
-   * If unset, defaults to localhost:4000 (dev-friendly).
+   * Proxy /api and Socket.IO to Express (PORT 4000).
+   * Set API_INTERNAL_URL in production (e.g. http://server:4000).
+   * Defaults to http://127.0.0.1:4000 for local dev.
    */
   async rewrites() {
-    const backend = (process.env.API_INTERNAL_URL || 'http://127.0.0.1:4000').replace(
+    const apiUrl = (process.env.API_INTERNAL_URL || 'http://127.0.0.1:4000').replace(
       /\/$/,
       ''
     );
+
     return [
       {
         source: '/api/:path*',
-        destination: `${backend}/api/:path*`,
+        destination: `${apiUrl}/api/:path*`,
       },
       {
         source: '/socket.io/:path*',
-        destination: `${backend}/socket.io/:path*`,
+        destination: `${apiUrl}/socket.io/:path*`,
       },
     ];
   },
