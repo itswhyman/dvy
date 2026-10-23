@@ -1,0 +1,127 @@
+.shell {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+}
+
+.card {
+  max-width: 520px;
+  width: 100%;
+  padding: 36px 28px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 107, 138, 0.25);
+  background: var(--surface);
+  animation: fadeUp 0.45s var(--ease) both;
+  box-shadow: 0 0 40px rgba(255, 107, 138, 0.08);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rose);
+  background: rgba(255, 107, 138, 0.12);
+  border: 1px solid rgba(255, 107, 138, 0.28);
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.desc {
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+
+.digestBox {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.digestLabel {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.digestValue {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88rem;
+  color: var(--amber);
+  word-break: break-all;
+}
+
+.errorMsg {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--text);
+  opacity: 0.85;
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: none;
+  background: var(--cyan);
+  color: #061018;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glow-cyan);
+}
+
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ghost:hover {
+  border-color: rgba(54, 232, 208, 0.45);
+  background: rgba(54, 232, 208, 0.06);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}

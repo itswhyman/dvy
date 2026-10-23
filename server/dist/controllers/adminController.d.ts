@@ -1,0 +1,10 @@
+import { Response } from 'express';
+import type { AuthRequest } from '../middleware/auth.js';
+export declare function listUsers(_req: AuthRequest, res: Response): Promise<void>;
+export declare function updateUserRole(req: AuthRequest, res: Response): Promise<void>;
+export declare function deleteUser(req: AuthRequest, res: Response): Promise<void>;
+export declare function getSettings(_req: AuthRequest, res: Response): Promise<void>;
+export declare function updateSetting(req: AuthRequest, res: Response): Promise<void>;
+export declare function dashboardStats(_req: AuthRequest, res: Response): Promise<void>;
+export declare function listLogs(req: AuthRequest, res: Response): Promise<void>;
+export declare function clearSystemLogs(_req: AuthRequest, res: Response): Promise<void>;

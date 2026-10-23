@@ -1,0 +1,44 @@
+.shell {
+  min-height: 100svh;
+}
+
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.banner {
+  padding: 10px 28px;
+  background: linear-gradient(90deg, rgba(139, 108, 255, 0.2), rgba(54, 232, 208, 0.12));
+  border-bottom: 1px solid var(--line);
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.content {
+  flex: 1;
+  padding: 28px 32px 48px;
+  animation: fadeUp 0.4s var(--ease);
+}
+
+.loading {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+}
+
+.pulse {
+  color: var(--muted);
+  animation: pulse 1.2s ease infinite;
+}
+
+@media (max-width: 900px) {
+  .main {
+    margin-left: 72px;
+  }
+  .content {
+    padding: 20px 16px 40px;
+  }
+}

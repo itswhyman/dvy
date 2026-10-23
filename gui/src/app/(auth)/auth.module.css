@@ -1,0 +1,133 @@
+.shell {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.card {
+  width: min(420px, 100%);
+  padding: 36px 32px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(22px);
+  box-shadow: var(--shadow-card);
+  animation: fadeUp 0.5s var(--ease);
+}
+
+.brand {
+  display: inline-block;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: 0.85rem;
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 1.75rem;
+  margin-bottom: 6px;
+}
+
+.lead {
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-size: 0.95rem;
+}
+
+.form { display: grid; gap: 16px; }
+.field { display: grid; gap: 6px; }
+
+.label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form .input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.55);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.input::placeholder {
+  color: rgba(139, 146, 168, 0.6);
+}
+
+.error {
+  color: var(--rose);
+  font-size: 0.88rem;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(251, 113, 133, 0.1);
+  border: 1px solid rgba(251, 113, 133, 0.25);
+}
+
+.submit {
+  margin-top: 4px;
+  padding: 13px 20px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--gradient-brand);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.25s, opacity 0.2s;
+  box-shadow: var(--glow-accent);
+}
+
+.submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 36px rgba(99, 102, 241, 0.45);
+}
+
+.submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.footer {
+  margin-top: 22px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.footer a {
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+.footer a:hover { text-decoration: underline; }
+
+.hint {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.backHome {
+  display: block;
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+
+.backHome:hover { color: var(--text); }
