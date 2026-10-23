@@ -9,11 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "critters": "^0.0.23",
+    "eslint": "^10.13.0",
+    "jspdf": "^2.5.2",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "socket.io-client": "^4.8.0",
-    "jspdf": "^2.5.2"
+    "socket.io-client": "^4.8.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
