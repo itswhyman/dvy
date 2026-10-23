@@ -9,6 +9,7 @@ import fs from 'fs';
 import routes from './routes/index.js';
 import { initSocket } from './services/socket.js';
 import { logEvent, logHttp } from './services/loggerService.js';
+import { pool } from './config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,15 +193,16 @@ app.get('*', (req, res, next) => {
 // Global error handler
 app.use(
   (
-    err: Error,
+    err: any,
     req: express.Request,
     res: express.Response,
     _next: express.NextFunction
   ) => {
+    const msg = err.message || 'Unhandled error';
     logEvent({
       level: 'error',
       category: 'api',
-      message: err.message || 'Unhandled error',
+      message: msg,
       statusCode: 500,
       method: req.method,
       path: req.originalUrl || req.path,
@@ -210,22 +212,31 @@ app.use(
         undefined,
       meta: { stack: err.stack?.split('\n').slice(0, 4) },
     });
-    console.error('[unhandled]', err.message);
+    console.error('[Server Error]', req.method, req.url, err);
     if (!res.headersSent) {
-      res.status(500).json({ success: false, error: 'Internal server error.' });
+      res.status(500).json({ success: false, error: 'Internal server error.', message: msg });
     }
   }
 );
 
 initSocket(server);
 
-server.listen(PORT, () => {
-  console.log(`BEST API listening on :${PORT}`);
-  console.log(`  POST /api/auth/login`);
-  console.log(`  POST /api/auth/register`);
-  logEvent({
-    level: 'info',
-    category: 'system',
-    message: `API started on port ${PORT} (NODE_ENV=${process.env.NODE_ENV || 'development'})`,
+pool.getConnection()
+  .then((conn) => {
+    console.log('✅ MariaDB Database connected successfully');
+    conn.release();
+    server.listen(PORT, () => {
+      console.log(`🚀 BEST API listening on :${PORT}`);
+      console.log(`  POST /api/auth/login`);
+      console.log(`  POST /api/auth/register`);
+      logEvent({
+        level: 'info',
+        category: 'system',
+        message: `API started on port ${PORT} (NODE_ENV=${process.env.NODE_ENV || 'development'})`,
+      });
+    });
+  })
+  .catch((error) => {
+    console.error('❌ Database connection failed:', error);
+    process.exit(1);
   });
-});

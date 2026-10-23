@@ -3,6 +3,13 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
+  experimental: {
+    optimizeCss: true,
+  },
+
   async headers() {
     return [
       {
@@ -27,7 +34,7 @@ const nextConfig = {
    * Defaults to http://127.0.0.1:4000 for local dev.
    */
   async rewrites() {
-    const apiUrl = (process.env.API_INTERNAL_URL || 'http://127.0.0.1:4000').replace(
+    const apiUrl = (process.env.API_INTERNAL_URL || 'http://localhost:4000').replace(
       /\/$/,
       ''
     );
