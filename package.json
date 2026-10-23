@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "BEST Ultimate Workspace & Creative Ecosystem — monorepo",
-  "workspaces": ["server", "gui"],
+  "workspaces": [
+    "server",
+    "gui"
+  ],
   "scripts": {
     "dev": "concurrently -n server,gui -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w gui\"",
     "build": "npm run build -w server && npm run build -w gui",
@@ -12,9 +15,13 @@
     "seed": "npm run seed -w server"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "eslint": "^10.13.0"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "critters": "^0.0.23"
   }
 }
