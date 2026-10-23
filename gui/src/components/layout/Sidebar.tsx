@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import ThemeToggle from '@/components/common/ThemeToggle';
 import styles from './Sidebar.module.css';
 
 const NAV = [
@@ -52,17 +53,20 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <div className={styles.user}>
-        <div className={styles.avatar}>
-          {(user?.name || '?').slice(0, 1).toUpperCase()}
+      <div className={styles.footer}>
+        <ThemeToggle />
+        <div className={styles.user}>
+          <div className={styles.avatar}>
+            {(user?.name || '?').slice(0, 1).toUpperCase()}
+          </div>
+          <div className={styles.meta}>
+            <strong>{user?.name}</strong>
+            <span>{user?.role}</span>
+          </div>
+          <button type="button" className={styles.logout} onClick={logout} title="Sign out">
+            ⎋
+          </button>
         </div>
-        <div className={styles.meta}>
-          <strong>{user?.name}</strong>
-          <span>{user?.role}</span>
-        </div>
-        <button type="button" className={styles.logout} onClick={logout} title="Sign out">
-          ⎋
-        </button>
       </div>
     </aside>
   );
