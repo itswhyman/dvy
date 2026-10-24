@@ -3,8 +3,28 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import type { ChatContact, Post } from '@/types';
+import type { ChatContact, Post, PostComment } from '@/types';
 import styles from './PostList.module.css';
+
+function initials(name?: string | null) {
+  if (!name) return '?';
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  return `${d}d`;
+}
 
 export default function PostList() {
   const { user } = useAuth();
@@ -13,9 +33,7 @@ export default function PostList() {
   const [content, setContent] = useState('');
   const [busy, setBusy] = useState(false);
   const [openComments, setOpenComments] = useState<number | null>(null);
-  const [comments, setComments] = useState<
-    Record<number, { id: number; text: string; author_name?: string; created_at: string }[]>
-  >({});
+  const [comments, setComments] = useState<Record<number, PostComment[]>>({});
   const [commentText, setCommentText] = useState('');
 
   const load = useCallback(async () => {
@@ -25,7 +43,7 @@ export default function PostList() {
 
   const loadPresence = useCallback(async () => {
     const res = await api<ChatContact[]>('/messages/contacts');
-    setOnline((res.data ?? []).slice(0, 12));
+    setOnline((res.data ?? []).slice(0, 14));
   }, []);
 
   useEffect(() => {
@@ -57,7 +75,7 @@ export default function PostList() {
             ? {
                 ...p,
                 liked_by_me: res.data!.liked,
-                likes_count: p.likes_count + (res.data!.liked ? 1 : -1),
+                likes_count: Math.max(0, p.likes_count + (res.data!.liked ? 1 : -1)),
               }
             : p
         )
@@ -72,26 +90,29 @@ export default function PostList() {
     }
     setOpenComments(postId);
     if (!comments[postId]) {
-      const res = await api<{ id: number; text: string; author_name?: string; created_at: string }[]>(
-        `/posts/${postId}/comments`
-      );
-      setComments((prev) => ({ ...prev, [postId]: res.data ?? [] }));
+      const res = await api<PostComment[]>(`/posts/${postId}/comments`);
+      // API may return tree or flat
+      const data = (res.data ?? []) as PostComment[];
+      setComments((prev) => ({ ...prev, [postId]: data }));
     }
   }
 
   async function submitComment(postId: number) {
     if (!commentText.trim()) return;
-    const res = await api<{ id: number; text: string; author_name?: string; created_at: string }>(
-      `/posts/${postId}/comments`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ text: commentText.trim(), parent_id: null }),
-      }
-    );
+    const res = await api<PostComment>(`/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ text: commentText.trim(), parent_id: null }),
+    });
     if (res.data) {
+      const entry: PostComment = {
+        ...res.data,
+        author_name: res.data.author_name || user?.name || 'You',
+        text: res.data.text || commentText.trim(),
+        replies: res.data.replies || [],
+      };
       setComments((prev) => ({
         ...prev,
-        [postId]: [...(prev[postId] ?? []), res.data!],
+        [postId]: [...(prev[postId] ?? []), entry],
       }));
       setPosts((prev) =>
         prev.map((p) =>
@@ -102,99 +123,108 @@ export default function PostList() {
     }
   }
 
-  function timeAgo(iso: string) {
-    const diff = Date.now() - new Date(iso).getTime();
-    const m = Math.floor(diff / 60000);
-    if (m < 1) return 'just now';
-    if (m < 60) return `${m}m`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h`;
-    return `${Math.floor(h / 24)}d`;
-  }
-
   return (
     <div className={styles.wrap}>
       <header className={styles.head}>
-        <div>
-          <h1 className={styles.title}>Home</h1>
-          <p className={styles.sub}>Workspace pulse · team updates · social</p>
-        </div>
+        <h1 className={styles.title}>Home</h1>
+        <p className={styles.sub}>Stories · posts · realtime social pulse</p>
       </header>
 
-      <section className={styles.stories} aria-label="Active workspace">
-        <div className={styles.storyItem}>
-          <div className={`${styles.storyRing} ${styles.storyYou}`}>
-            <span>{(user?.name || '?')[0]}</span>
+      {/* Stories / active people */}
+      <div className={styles.stories} aria-label="Active people">
+        {user && (
+          <div className={styles.story}>
+            <div className={`${styles.storyRing} ${styles.storyOnline}`}>
+              {user.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatar_url} alt={user.name} />
+              ) : (
+                <span className={styles.storyFallback}>{initials(user.name)}</span>
+              )}
+            </div>
+            <span className={styles.storyName}>You</span>
           </div>
-          <em>You</em>
-        </div>
+        )}
         {online.map((c) => (
-          <div key={c.id} className={styles.storyItem}>
+          <div key={c.id} className={styles.story}>
             <div
               className={`${styles.storyRing} ${
                 c.status === 'online' ? styles.storyOnline : ''
               }`}
             >
-              <span>{(c.name || '?')[0]}</span>
+              {c.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.avatar_url} alt={c.name} />
+              ) : (
+                <span className={styles.storyFallback}>{initials(c.name)}</span>
+              )}
             </div>
-            <em>{c.name?.split(' ')[0] || 'User'}</em>
+            <span className={styles.storyName}>{c.name.split(' ')[0]}</span>
           </div>
         ))}
-      </section>
+      </div>
 
+      {/* Composer */}
       <form className={styles.composer} onSubmit={publish}>
         <div className={styles.composerTop}>
-          <div className={styles.composerAv}>{(user?.name || '?')[0]}</div>
+          {user?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={styles.meAvatar} src={user.avatar_url} alt="" />
+          ) : (
+            <span className={styles.meAvatarFallback}>{initials(user?.name)}</span>
+          )}
           <textarea
-            className={styles.textarea}
+            rows={2}
             placeholder="Share an update with your workspace…"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={3}
           />
         </div>
-        <div className={styles.composerBar}>
-          <span className={styles.hint}>Markdown-friendly · keep it short</span>
+        <div className={styles.composerActions}>
           <button className={styles.publish} type="submit" disabled={busy || !content.trim()}>
             {busy ? 'Posting…' : 'Publish'}
           </button>
         </div>
       </form>
 
+      {/* Feed */}
       <div className={styles.feed}>
         {posts.length === 0 && (
-          <div className={styles.empty}>No posts yet. Be the first to share something.</div>
+          <div className={styles.empty}>No posts yet. Be the first to share.</div>
         )}
         {posts.map((p) => (
           <article key={p.id} className={styles.card}>
-            <div className={styles.author}>
-              <div className={styles.avatar}>{(p.author_name || '?')[0]}</div>
+            <div className={styles.cardHead}>
+              {p.author_avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className={styles.avatar} src={p.author_avatar} alt="" />
+              ) : (
+                <span className={styles.avatarFallback}>{initials(p.author_name)}</span>
+              )}
               <div className={styles.authorMeta}>
-                <strong>{p.author_name || 'User'}</strong>
-                <span>{timeAgo(p.created_at)}</span>
+                <span className={styles.authorName}>{p.author_name || 'Member'}</span>
+                <span className={styles.time}>{timeAgo(p.created_at)}</span>
               </div>
             </div>
 
-            <p className={styles.content}>{p.content}</p>
+            <div className={styles.body}>{p.content}</div>
 
             {p.image_url && (
-              <div className={styles.media}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.image_url} alt="" />
-              </div>
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className={styles.media} src={p.image_url} alt="" />
             )}
 
             <div className={styles.actions}>
               <button
                 type="button"
-                className={`${styles.action} ${p.liked_by_me ? styles.liked : ''}`}
+                className={`${styles.actionBtn} ${p.liked_by_me ? styles.liked : ''}`}
                 onClick={() => toggleLike(p.id)}
               >
                 {p.liked_by_me ? '♥' : '♡'} {p.likes_count}
               </button>
               <button
                 type="button"
-                className={styles.action}
+                className={styles.actionBtn}
                 onClick={() => toggleComments(p.id)}
               >
                 💬 {p.comments_count}
@@ -203,23 +233,33 @@ export default function PostList() {
 
             {openComments === p.id && (
               <div className={styles.comments}>
-                {(comments[p.id] ?? []).map((c: any) => (
+                {(comments[p.id] ?? []).map((c) => (
                   <div key={c.id} className={styles.comment}>
-                    <strong>{c.author_name || 'User'}</strong>
-                    <span>{c.text || c.body}</span>
-                    {(c.replies || []).map((r: any) => (
-                      <div key={r.id} className={styles.reply}>
-                        <strong>{r.author_name || 'User'}</strong>
-                        <span>{r.text || r.body}</span>
-                      </div>
-                    ))}
+                    {c.author_avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className={styles.commentAvatar} src={c.author_avatar} alt="" />
+                    ) : (
+                      <span className={styles.commentAvatarFallback}>
+                        {initials(c.author_name)}
+                      </span>
+                    )}
+                    <div className={styles.commentBody}>
+                      <strong>{c.author_name || 'User'}</strong>
+                      <span>{c.text}</span>
+                      {(c.replies || []).map((r) => (
+                        <div key={r.id} className={styles.reply}>
+                          <strong>{r.author_name || 'User'}</strong>
+                          <span>{r.text}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
                 <div className={styles.commentForm}>
                   <input
+                    placeholder="Write a comment…"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Write a comment…"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -228,7 +268,7 @@ export default function PostList() {
                     }}
                   />
                   <button type="button" onClick={() => void submitComment(p.id)}>
-                    Reply
+                    Send
                   </button>
                 </div>
               </div>

@@ -5,27 +5,27 @@ import { api } from '@/lib/api';
 import type { Todo } from '@/types';
 import styles from './TodoList.module.css';
 
-const COLUMNS: { key: Todo['status']; label: string }[] = [
-  { key: 'pending', label: 'Pending' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'completed', label: 'Completed' },
+const COLUMNS: { key: Todo['status']; label: string; hint: string }[] = [
+  { key: 'pending', label: 'Backlog', hint: 'Ready to start' },
+  { key: 'in_progress', label: 'Focus', hint: 'In motion' },
+  { key: 'completed', label: 'Done', hint: 'Shipped' },
 ];
 
 type PriorityFilter = 'all' | 'high' | 'medium' | 'low' | 'ai_suggested';
+
+const PRIORITY_FILTERS: { id: PriorityFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'high', label: 'High' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'low', label: 'Low' },
+  { id: 'ai_suggested', label: 'AI' },
+];
 
 function prioClass(priority: Todo['priority']): string {
   const key = `p_${String(priority)}`;
   const map = styles as Record<string, string>;
   return map[key] ? `${styles.prio} ${map[key]}` : styles.prio;
 }
-
-const PRIORITY_FILTERS: PriorityFilter[] = [
-  'all',
-  'high',
-  'medium',
-  'low',
-  'ai_suggested',
-];
 
 export default function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -47,6 +47,13 @@ export default function TodoList() {
     if (filter === 'all') return todos;
     return todos.filter((t) => String(t.priority) === filter);
   }, [todos, filter]);
+
+  const stats = useMemo(() => {
+    const total = todos.length;
+    const done = todos.filter((t) => t.status === 'completed').length;
+    const active = todos.filter((t) => t.status === 'in_progress').length;
+    return { total, done, active, rate: total ? Math.round((done / total) * 100) : 0 };
+  }, [todos]);
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -93,34 +100,54 @@ export default function TodoList() {
     <div className={styles.wrap}>
       <header className={styles.head}>
         <div>
-          <h1 className={styles.title}>Smart Todos</h1>
-          <p className={styles.sub}>Kanban + AI priority scoring</p>
+          <h1 className={styles.title}>Todos</h1>
+          <p className={styles.sub}>Kanban flow · AI priority · drag between columns</p>
         </div>
-        <div className={styles.filters}>
-          {PRIORITY_FILTERS.map((f) => (
-            <button
-              key={f}
-              type="button"
-              className={`${styles.chip} ${filter === f ? styles.chipOn : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f === 'all' ? 'All' : f.replace('_', ' ')}
-            </button>
-          ))}
+        <div className={styles.statRow}>
+          <div className={styles.stat}>
+            <span>Total</span>
+            <strong>{stats.total}</strong>
+          </div>
+          <div className={styles.stat}>
+            <span>Active</span>
+            <strong>{stats.active}</strong>
+          </div>
+          <div className={styles.stat}>
+            <span>Done</span>
+            <strong>{stats.done}</strong>
+          </div>
+          <div className={styles.stat}>
+            <span>Rate</span>
+            <strong>{stats.rate}%</strong>
+          </div>
         </div>
       </header>
 
-      <form className={styles.create} onSubmit={onCreate}>
-        <input
-          className={styles.input}
-          placeholder="New task title…"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <button className={styles.addBtn} type="submit" disabled={busy}>
-          Add
-        </button>
-      </form>
+      <div className={styles.toolbar}>
+        <form className={styles.create} onSubmit={onCreate}>
+          <input
+            className={styles.input}
+            placeholder="What needs focus next?"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <button className={styles.addBtn} type="submit" disabled={busy || !title.trim()}>
+            Add task
+          </button>
+        </form>
+        <div className={styles.filters}>
+          {PRIORITY_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className={`${styles.chip} ${filter === f.id ? styles.chipOn : ''}`}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className={styles.board}>
         {COLUMNS.map((col) => {
@@ -132,34 +159,38 @@ export default function TodoList() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => onDrop(col.key)}
             >
-              <h2 className={styles.colTitle}>
-                {col.label}
+              <div className={styles.colHead}>
+                <h2 className={styles.colTitle}>{col.label}</h2>
                 <span className={styles.count}>{items.length}</span>
-              </h2>
+              </div>
+              <p className={styles.colHint}>{col.hint}</p>
               <div className={styles.list}>
                 {items.map((t) => (
                   <article
                     key={t.id}
-                    className={styles.card}
+                    className={`${styles.card} ${dragId === t.id ? styles.dragging : ''}`}
                     draggable
                     onDragStart={() => setDragId(t.id)}
+                    onDragEnd={() => setDragId(null)}
                   >
                     <div className={styles.cardTop}>
                       <strong>{t.title}</strong>
-                      <span className={prioClass(t.priority)}>
-                        {String(t.priority)}
-                      </span>
+                      <span className={prioClass(t.priority)}>{String(t.priority)}</span>
                     </div>
                     {t.description && <p className={styles.desc}>{t.description}</p>}
                     <div className={styles.meta}>
                       {t.ai_score != null && (
-                        <span className={styles.score}>AI {Math.round(t.ai_score)}</span>
+                        <span className={styles.score}>AI {Math.round(Number(t.ai_score))}</span>
                       )}
-                      {t.due_date && <span className={styles.due}>{t.due_date}</span>}
+                      {(t.due_date || t.due_at) && (
+                        <span className={styles.due}>
+                          {String(t.due_date || t.due_at).slice(0, 10)}
+                        </span>
+                      )}
                     </div>
                     <div className={styles.actions}>
                       <button type="button" className={styles.aiBtn} onClick={() => rateAi(t.id)}>
-                        Rate with AI
+                        AI rate
                       </button>
                       <button type="button" className={styles.delBtn} onClick={() => remove(t.id)}>
                         Delete
@@ -167,6 +198,7 @@ export default function TodoList() {
                     </div>
                   </article>
                 ))}
+                {items.length === 0 && <div className={styles.emptyCol}>Drop tasks here</div>}
               </div>
             </section>
           );
