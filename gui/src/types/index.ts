@@ -32,8 +32,11 @@ export interface Todo {
   title: string;
   description: string | null;
   notes?: string | null;
-  /** 0.0 – 5.0 in 0.5 steps */
-  priority: number;
+  /**
+   * Backend may return legacy string priorities or numeric 0–5 scores.
+   * UI should handle both.
+   */
+  priority: number | 'low' | 'medium' | 'high' | 'ai_suggested';
   ai_score: number | null;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   due_at?: string | null;
@@ -184,10 +187,13 @@ export interface TeamMember {
 export interface Subscription {
   id: number;
   user_id: number;
-  plan: 'free' | 'pro' | 'team' | 'enterprise';
+  plan?: 'free' | 'pro' | 'team' | 'enterprise';
+  plan_type?: 'free' | 'pro' | 'team' | 'enterprise' | string;
   status: string;
-  post_limit: number;
+  post_limit?: number;
   current_period_end?: string | null;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
 }
 
 export interface ApiResponse<T> {

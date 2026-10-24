@@ -11,10 +11,26 @@ const COLUMNS: { key: Todo['status']; label: string }[] = [
   { key: 'completed', label: 'Completed' },
 ];
 
+type PriorityFilter = 'all' | 'high' | 'medium' | 'low' | 'ai_suggested';
+
+function prioClass(priority: Todo['priority']): string {
+  const key = `p_${String(priority)}`;
+  const map = styles as Record<string, string>;
+  return map[key] ? `${styles.prio} ${map[key]}` : styles.prio;
+}
+
+const PRIORITY_FILTERS: PriorityFilter[] = [
+  'all',
+  'high',
+  'medium',
+  'low',
+  'ai_suggested',
+];
+
 export default function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState('');
-  const [filter, setFilter] = useState<'all' | Todo['priority']>('all');
+  const [filter, setFilter] = useState<PriorityFilter>('all');
   const [busy, setBusy] = useState(false);
   const [dragId, setDragId] = useState<number | null>(null);
 
@@ -29,7 +45,7 @@ export default function TodoList() {
 
   const filtered = useMemo(() => {
     if (filter === 'all') return todos;
-    return todos.filter((t) => t.priority === filter);
+    return todos.filter((t) => String(t.priority) === filter);
   }, [todos, filter]);
 
   async function onCreate(e: FormEvent) {
@@ -81,7 +97,7 @@ export default function TodoList() {
           <p className={styles.sub}>Kanban + AI priority scoring</p>
         </div>
         <div className={styles.filters}>
-          {(['all', 'high', 'medium', 'low', 'ai_suggested'] as const).map((f) => (
+          {PRIORITY_FILTERS.map((f) => (
             <button
               key={f}
               type="button"
@@ -130,8 +146,8 @@ export default function TodoList() {
                   >
                     <div className={styles.cardTop}>
                       <strong>{t.title}</strong>
-                      <span className={`${styles.prio} ${styles[`p_${t.priority}`]}`}>
-                        {t.priority}
+                      <span className={prioClass(t.priority)}>
+                        {String(t.priority)}
                       </span>
                     </div>
                     {t.description && <p className={styles.desc}>{t.description}</p>}

@@ -7,10 +7,13 @@ import styles from './BoardCanvas.module.css';
 
 const COLORS = ['#8b6cff', '#36e8d0', '#ff6bcb', '#ffc14a', '#3dd68c'];
 
+type Tool = 'select' | 'rect' | 'circle' | 'line' | 'arrow' | 'text';
+const TOOLS: Tool[] = ['select', 'rect', 'circle', 'line', 'arrow', 'text'];
+
 export default function BoardCanvas() {
   const [boards, setBoards] = useState<Board[]>([]);
   const [active, setActive] = useState<Board | null>(null);
-  const [tool, setTool] = useState<'rect' | 'circle' | 'line' | 'arrow' | 'text' | 'select'>('rect');
+  const [tool, setTool] = useState<Tool>('rect');
   const [zoom, setZoom] = useState(1);
   const [color, setColor] = useState(COLORS[0]);
   const [objects, setObjects] = useState<CanvasObject[]>([]);
@@ -187,7 +190,7 @@ export default function BoardCanvas() {
 
         <div className={styles.stage}>
           <div className={styles.toolbar}>
-            {(['select', 'rect', 'circle', 'line', 'text'] as const).map((t) => (
+            {TOOLS.map((t) => (
               <button
                 key={t}
                 type="button"
