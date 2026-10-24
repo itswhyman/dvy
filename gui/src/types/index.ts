@@ -160,9 +160,15 @@ export interface ChatMessage {
 
 export interface Team {
   id: number;
-  name: string;
+  /** Preferred display name */
+  name?: string;
+  /** Legacy / API alias used by TeamDashboard */
+  team_name?: string;
   description?: string | null;
-  owner_id: number;
+  owner_id?: number;
+  lead_user_id?: number;
+  performance_score?: number;
+  metrics_json?: Record<string, number> | null;
   created_at: string;
 }
 

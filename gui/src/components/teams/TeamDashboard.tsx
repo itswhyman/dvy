@@ -28,7 +28,11 @@ export default function TeamDashboard() {
     void load();
   }, [load]);
 
-  const maxScore = Math.max(...(teams.map((t) => t.performance_score) || [100]), 1);
+  const maxScore = Math.max(
+    1,
+    ...teams.map((t) => Number(t.performance_score ?? 0)),
+    100
+  );
 
   return (
     <div className={styles.wrap}>
@@ -65,12 +69,14 @@ export default function TeamDashboard() {
       <div className={styles.grid}>
         {teams.map((t) => {
           const m = t.metrics_json || {};
-          const pct = Math.round((t.performance_score / maxScore) * 100);
+          const score = Number(t.performance_score ?? 0);
+          const pct = Math.round((score / maxScore) * 100);
+          const label = t.team_name || t.name || `Team #${t.id}`;
           return (
             <article key={t.id} className={styles.card}>
               <div className={styles.cardHead}>
-                <h2>{t.team_name}</h2>
-                <span className={styles.score}>{t.performance_score.toFixed(1)}</span>
+                <h2>{label}</h2>
+                <span className={styles.score}>{score.toFixed(1)}</span>
               </div>
               <div className={styles.barTrack}>
                 <div className={styles.barFill} style={{ width: `${pct}%` }} />

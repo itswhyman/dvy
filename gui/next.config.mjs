@@ -3,6 +3,12 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // ESLint 9+ removed useEslintrc/extensions; Next's bundled lint options can conflict.
+  // Keep production builds unblocked; run `npm run lint` separately when needed.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
