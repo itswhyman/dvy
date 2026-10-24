@@ -40,11 +40,11 @@ export default function LandingPage() {
           <nav className={styles.navLinks}>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
-            <button type="button" className={styles.navGhost} onClick={() => goProtected('/todos')}>
+            <button type="button" className={styles.navGhost} onClick={() => goProtected('/feed')}>
               Dashboard
             </button>
             {user ? (
-              <Link href="/todos" className={styles.navCta}>Open Workspace</Link>
+              <Link href="/feed" className={styles.navCta}>Open Workspace</Link>
             ) : (
               <>
                 <Link href="/login" className={styles.navGhost}>Sign in</Link>
@@ -68,7 +68,7 @@ export default function LandingPage() {
         </p>
         <div className={styles.heroActions}>
           {user ? (
-            <Link href="/todos" className={styles.btnPrimary}>Go to Dashboard</Link>
+            <Link href="/feed" className={styles.btnPrimary}>Go to Dashboard</Link>
           ) : (
             <>
               <Link href="/register" className={styles.btnPrimary}>Start free</Link>

@@ -24,7 +24,7 @@ export default function LoginPage() {
       setError(res.error || 'Giriş başarısız');
       return;
     }
-    router.push('/todos');
+    router.push('/feed');
   }
 
   return (

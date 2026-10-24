@@ -1,33 +1,45 @@
-.btn {
+.toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  font-weight: 600;
+  background: transparent;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.15s;
 }
 
-.btn:hover {
-  border-color: var(--accent);
-  color: var(--text);
-  background: var(--surface-hover);
+.track {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease);
 }
 
-.icon {
-  font-size: 1rem;
-  line-height: 1;
+.track[data-theme='dark'] {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: var(--line-glow);
 }
 
-.label {
-  letter-spacing: 0.02em;
+.thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.35s var(--ease);
 }
 
-@media (max-width: 480px) {
-  .label { display: none; }
+.track[data-theme='dark'] .thumb {
+  transform: translateX(22px);
+  background: var(--accent);
+  color: #fff;
 }

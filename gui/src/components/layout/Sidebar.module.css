@@ -4,57 +4,98 @@
   width: var(--sidebar-w);
   display: flex;
   flex-direction: column;
-  padding: 20px 14px;
+  padding: 18px 12px;
   border-right: 1px solid var(--line);
   background: var(--surface);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   z-index: 40;
   transition: background 0.3s var(--ease), border-color 0.3s var(--ease);
 }
 
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 8px 12px 22px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px 20px;
+}
+
+.logoMark {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff;
+  background: var(--gradient-brand);
+  box-shadow: var(--glow-accent);
+  flex-shrink: 0;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .logo {
   font-weight: 700;
-  letter-spacing: 0.14em;
-  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  font-size: 0.95rem;
   background: var(--gradient-brand);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  line-height: 1.2;
 }
 
 .tag {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+}
+
+.sectionLabel {
+  margin: 14px 12px 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.sectionLabel:first-child {
+  margin-top: 0;
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   flex: 1;
   overflow-y: auto;
+  padding-bottom: 8px;
 }
 
 .link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   border-radius: var(--radius-sm);
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease), box-shadow 0.2s;
+  transition:
+    background 0.2s var(--ease),
+    color 0.2s var(--ease),
+    box-shadow 0.2s var(--ease),
+    transform 0.15s var(--ease);
 }
 
 .link:hover {
@@ -63,7 +104,7 @@
 }
 
 .active {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
   box-shadow: inset 3px 0 0 var(--accent);
   font-weight: 600;
@@ -72,16 +113,17 @@
 .icon {
   width: 20px;
   text-align: center;
-  opacity: 0.9;
+  opacity: 0.92;
   font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .footer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 14px;
   border-top: 1px solid var(--line);
 }
 
@@ -93,6 +135,11 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--bg-elevated);
+  transition: border-color 0.2s var(--ease);
+}
+
+.user:hover {
+  border-color: var(--line-strong);
 }
 
 .avatar {
@@ -106,6 +153,13 @@
   font-size: 0.9rem;
   color: #fff;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .meta {
@@ -115,7 +169,7 @@
 }
 
 .meta strong {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -123,7 +177,7 @@
 }
 
 .meta span {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -150,22 +204,35 @@
     width: 72px;
     padding: 16px 8px;
   }
-  .brand .tag,
+
+  .brandText,
+  .sectionLabel,
   .link span:not(.icon),
   .meta,
-  .logout,
-  .footer > *:not(.user) {
+  .logout {
     display: none;
   }
+
+  .brand {
+    justify-content: center;
+    padding: 6px 0 16px;
+  }
+
   .link {
     justify-content: center;
     padding: 12px;
   }
+
   .user {
     justify-content: center;
     padding: 8px;
   }
+
   .active {
     box-shadow: none;
+  }
+
+  .footer > button {
+    display: none;
   }
 }

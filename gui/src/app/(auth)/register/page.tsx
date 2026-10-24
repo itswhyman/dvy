@@ -25,7 +25,7 @@ export default function RegisterPage() {
       setError(res.error || 'Kayıt başarısız');
       return;
     }
-    router.push('/todos');
+    router.push('/feed');
   }
 
   return (

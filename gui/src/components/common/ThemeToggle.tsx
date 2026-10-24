@@ -5,20 +5,18 @@ import styles from './ThemeToggle.module.css';
 
 export default function ThemeToggle() {
   const { theme, toggle } = useTheme();
-  const isDark = theme === 'dark';
 
   return (
     <button
       type="button"
-      className={styles.btn}
+      className={styles.toggle}
       onClick={toggle}
-      aria-label={isDark ? 'Açık temaya geç' : 'Koyu temaya geç'}
-      title={isDark ? 'Light mode' : 'Dark mode'}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
     >
-      <span className={styles.icon} aria-hidden>
-        {isDark ? '☀' : '☾'}
+      <span className={styles.track} data-theme={theme}>
+        <span className={styles.thumb}>{theme === 'dark' ? '☾' : '☀'}</span>
       </span>
-      <span className={styles.label}>{isDark ? 'Light' : 'Dark'}</span>
     </button>
   );
 }
