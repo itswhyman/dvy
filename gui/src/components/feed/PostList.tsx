@@ -85,7 +85,7 @@ export default function PostList() {
       `/posts/${postId}/comments`,
       {
         method: 'POST',
-        body: JSON.stringify({ text: commentText.trim() }),
+        body: JSON.stringify({ text: commentText.trim(), parent_id: null }),
       }
     );
     if (res.data) {
@@ -203,10 +203,16 @@ export default function PostList() {
 
             {openComments === p.id && (
               <div className={styles.comments}>
-                {(comments[p.id] ?? []).map((c) => (
+                {(comments[p.id] ?? []).map((c: any) => (
                   <div key={c.id} className={styles.comment}>
                     <strong>{c.author_name || 'User'}</strong>
-                    <span>{c.text}</span>
+                    <span>{c.text || c.body}</span>
+                    {(c.replies || []).map((r: any) => (
+                      <div key={r.id} className={styles.reply}>
+                        <strong>{r.author_name || 'User'}</strong>
+                        <span>{r.text || r.body}</span>
+                      </div>
+                    ))}
                   </div>
                 ))}
                 <div className={styles.commentForm}>

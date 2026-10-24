@@ -10,7 +10,8 @@ const COLORS = ['#8b6cff', '#36e8d0', '#ff6bcb', '#ffc14a', '#3dd68c'];
 export default function BoardCanvas() {
   const [boards, setBoards] = useState<Board[]>([]);
   const [active, setActive] = useState<Board | null>(null);
-  const [tool, setTool] = useState<'rect' | 'circle' | 'line' | 'text' | 'select'>('rect');
+  const [tool, setTool] = useState<'rect' | 'circle' | 'line' | 'arrow' | 'text' | 'select'>('rect');
+  const [zoom, setZoom] = useState(1);
   const [color, setColor] = useState(COLORS[0]);
   const [objects, setObjects] = useState<CanvasObject[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -67,11 +68,22 @@ export default function BoardCanvas() {
         ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-      } else if (o.type === 'line' && o.x1 != null) {
+      } else if ((o.type === 'line' || o.type === 'arrow') && o.x1 != null) {
         ctx.beginPath();
         ctx.moveTo(o.x1, o.y1!);
         ctx.lineTo(o.x2!, o.y2!);
         ctx.stroke();
+        if (o.type === 'arrow') {
+          const angle = Math.atan2((o.y2! - o.y1!), (o.x2! - o.x1!));
+          const len = 10;
+          ctx.beginPath();
+          ctx.moveTo(o.x2!, o.y2!);
+          ctx.lineTo(o.x2! - len * Math.cos(angle - 0.4), o.y2! - len * Math.sin(angle - 0.4));
+          ctx.lineTo(o.x2! - len * Math.cos(angle + 0.4), o.y2! - len * Math.sin(angle + 0.4));
+          ctx.closePath();
+          ctx.fillStyle = o.stroke || o.fill || '#fff';
+          ctx.fill();
+        }
       } else if (o.type === 'text' && o.x != null && o.text) {
         ctx.fillStyle = o.fill || '#fff';
         ctx.font = '16px sans-serif';
@@ -111,8 +123,8 @@ export default function BoardCanvas() {
     } else if (tool === 'circle') {
       const r = Math.max(20, Math.hypot(p.x - startX, p.y - startY));
       obj = { type: 'circle', x: startX, y: startY, r, fill: color };
-    } else if (tool === 'line') {
-      obj = { type: 'line', x1: startX, y1: startY, x2: p.x, y2: p.y, stroke: color };
+    } else if (tool === 'line' || tool === 'arrow') {
+      obj = { type: tool, x1: startX, y1: startY, x2: p.x, y2: p.y, stroke: color };
     } else if (tool === 'text') {
       const text = window.prompt('Text label', 'Label');
       if (text) obj = { type: 'text', x: startX, y: startY, text, fill: color };

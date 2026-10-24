@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
 import CookieBanner from '@/components/common/CookieBanner';
+import { ToastProvider } from '@/components/common/ToastProvider';
 import '@/styles/globals.css';
 
 const inter = Inter({
@@ -67,8 +68,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.variable}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
-            <CookieBanner />
+            <ToastProvider>
+              {children}
+              <CookieBanner />
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

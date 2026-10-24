@@ -1,5 +1,19 @@
+-- ============================================================
+-- BEST Ultimate Workspace — Production Schema
+-- MariaDB / MySQL 8+ · utf8mb4_unicode_ci · InnoDB
+-- ============================================================
+-- Usage:
+--   mysql -u root -p < schema.sql
+-- Or:
+--   mysql -u root -p -e "SOURCE /path/to/schema.sql"
+--
+-- NOTE: No automatic dummy users. Register via app or use
+-- the optional INSERT examples at the bottom (commented out).
+-- ============================================================
+
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
+SET CHARACTER SET utf8mb4;
+SET collation_connection = utf8mb4_unicode_ci;
 
 CREATE DATABASE IF NOT EXISTS best_workspace
   CHARACTER SET utf8mb4
@@ -7,228 +21,332 @@ CREATE DATABASE IF NOT EXISTS best_workspace
 
 USE best_workspace;
 
+-- ------------------------------------------------------------
+-- USERS
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  email VARCHAR(190) NOT NULL,
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  email         VARCHAR(191) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  name VARCHAR(120) NOT NULL,
-  role ENUM('admin', 'user', 'pro_user') NOT NULL DEFAULT 'user',
-  avatar_url VARCHAR(500) NULL,
-  bio TEXT NULL,
-  status ENUM('online', 'offline') NOT NULL DEFAULT 'offline',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  name          VARCHAR(120) NOT NULL,
+  role          ENUM('admin','user','pro_user') NOT NULL DEFAULT 'user',
+  avatar_url    VARCHAR(512) NULL,
+  bio           TEXT NULL,
+  status        ENUM('online','offline') NOT NULL DEFAULT 'offline',
+  theme         ENUM('light','dark','system') NOT NULL DEFAULT 'system',
+  member_color  CHAR(7) NULL COMMENT 'Immutable hex for team UI borders',
+  sound_pref    VARCHAR(64) NULL DEFAULT 'default',
+  created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at    DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
-  KEY idx_users_role (role),
-  KEY idx_users_status (status)
+  KEY idx_users_status (status),
+  KEY idx_users_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS todos (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id INT UNSIGNED NOT NULL,
-  title VARCHAR(255) NOT NULL,
+-- ------------------------------------------------------------
+-- USER PROFILES (extended preferences)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_profiles (
+  user_id           BIGINT UNSIGNED NOT NULL,
+  display_name      VARCHAR(120) NULL,
+  headline          VARCHAR(255) NULL,
+  location          VARCHAR(120) NULL,
+  website           VARCHAR(255) NULL,
+  notification_json JSON NULL,
+  privacy_json      JSON NULL,
+  created_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at        DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (user_id),
+  CONSTRAINT fk_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- TEAMS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS teams (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name        VARCHAR(160) NOT NULL,
   description TEXT NULL,
-  priority ENUM('low', 'medium', 'high', 'ai_suggested') NOT NULL DEFAULT 'medium',
-  ai_score DECIMAL(5,2) NULL,
-  status ENUM('pending', 'in_progress', 'completed') NOT NULL DEFAULT 'pending',
-  due_date DATE NULL,
-  sort_order INT NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  owner_id    BIGINT UNSIGNED NOT NULL,
+  created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at  DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_teams_owner (owner_id),
+  CONSTRAINT fk_teams_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS team_members (
+  team_id     BIGINT UNSIGNED NOT NULL,
+  user_id     BIGINT UNSIGNED NOT NULL,
+  role        ENUM('owner','manager','member') NOT NULL DEFAULT 'member',
+  member_color CHAR(7) NOT NULL COMMENT 'Immutable per membership',
+  joined_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (team_id, user_id),
+  KEY idx_tm_user (user_id),
+  CONSTRAINT fk_tm_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tm_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- TODOS + SUB-TODOS
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS todos (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id       BIGINT UNSIGNED NOT NULL,
+  team_id       BIGINT UNSIGNED NULL,
+  assignee_id   BIGINT UNSIGNED NULL,
+  title         VARCHAR(255) NOT NULL,
+  description   TEXT NULL,
+  notes         TEXT NULL,
+  priority      DECIMAL(2,1) NOT NULL DEFAULT 0.0 COMMENT '0.0–5.0 step 0.5',
+  ai_score      DECIMAL(5,2) NULL,
+  status        ENUM('pending','in_progress','completed','cancelled') NOT NULL DEFAULT 'pending',
+  due_at        DATETIME(3) NULL,
+  sort_order    INT NOT NULL DEFAULT 0,
+  completed_at  DATETIME(3) NULL,
+  created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at    DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_todos_user (user_id),
+  KEY idx_todos_team (team_id),
+  KEY idx_todos_assignee (assignee_id),
+  KEY idx_todos_status (status),
+  KEY idx_todos_sort (user_id, sort_order),
   CONSTRAINT fk_todos_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  KEY idx_todos_user_status (user_id, status),
-  KEY idx_todos_priority (priority)
+  CONSTRAINT fk_todos_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL,
+  CONSTRAINT fk_todos_assignee FOREIGN KEY (assignee_id) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT chk_todos_priority CHECK (priority >= 0 AND priority <= 5)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS sub_todos (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  todo_id       BIGINT UNSIGNED NOT NULL,
+  parent_id     BIGINT UNSIGNED NULL COMMENT 'nested sub-item',
+  title         VARCHAR(255) NOT NULL,
+  is_done       TINYINT(1) NOT NULL DEFAULT 0,
+  sort_order    INT NOT NULL DEFAULT 0,
+  assignee_id   BIGINT UNSIGNED NULL,
+  created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at    DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_sub_todo (todo_id),
+  KEY idx_sub_parent (parent_id),
+  CONSTRAINT fk_sub_todo FOREIGN KEY (todo_id) REFERENCES todos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_sub_parent FOREIGN KEY (parent_id) REFERENCES sub_todos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_sub_assignee FOREIGN KEY (assignee_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- NOTES
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS notes (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id INT UNSIGNED NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  content MEDIUMTEXT NOT NULL,
-  category VARCHAR(80) NOT NULL DEFAULT 'general',
-  is_archived TINYINT(1) NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id       BIGINT UNSIGNED NOT NULL,
+  team_id       BIGINT UNSIGNED NULL,
+  title         VARCHAR(255) NOT NULL DEFAULT 'Untitled',
+  content       LONGTEXT NOT NULL,
+  template      ENUM('blank','grid','lined','dotted','music','calendar') NOT NULL DEFAULT 'blank',
+  category      VARCHAR(80) NOT NULL DEFAULT 'general',
+  project_desc  TEXT NULL COMMENT 'Required for team notes by managers',
+  is_archived   TINYINT(1) NOT NULL DEFAULT 0,
+  created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at    DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_notes_user (user_id),
+  KEY idx_notes_team (team_id),
+  KEY idx_notes_template (template),
   CONSTRAINT fk_notes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  KEY idx_notes_user_cat (user_id, category),
-  KEY idx_notes_archived (is_archived)
+  CONSTRAINT fk_notes_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------
+-- BOARDS (whiteboard / canvas)
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS boards (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id INT UNSIGNED NOT NULL,
-  title VARCHAR(200) NOT NULL,
-  canvas_data_json LONGTEXT NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id           BIGINT UNSIGNED NOT NULL,
+  team_id           BIGINT UNSIGNED NULL,
+  title             VARCHAR(255) NOT NULL DEFAULT 'Untitled board',
+  canvas_data_json  LONGTEXT NOT NULL,
+  viewport_json     JSON NULL COMMENT 'zoom, pan x/y',
+  created_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at        DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_boards_user (user_id),
+  KEY idx_boards_team (team_id),
   CONSTRAINT fk_boards_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  KEY idx_boards_user (user_id)
+  CONSTRAINT fk_boards_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------
+-- SOCIAL: POSTS / LIKES / COMMENTS (threaded)
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS posts (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id INT UNSIGNED NOT NULL,
-  content TEXT NOT NULL,
-  image_url VARCHAR(500) NULL,
-  likes_count INT UNSIGNED NOT NULL DEFAULT 0,
-  comments_count INT UNSIGNED NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  KEY idx_posts_created (created_at)
+  id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id         BIGINT UNSIGNED NOT NULL,
+  content         TEXT NOT NULL,
+  image_url       VARCHAR(512) NULL,
+  likes_count     INT UNSIGNED NOT NULL DEFAULT 0,
+  comments_count  INT UNSIGNED NOT NULL DEFAULT 0,
+  created_at      DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at      DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_posts_user (user_id),
+  KEY idx_posts_created (created_at),
+  CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS post_likes (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  post_id INT UNSIGNED NOT NULL,
-  user_id INT UNSIGNED NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_post_like (post_id, user_id),
+  post_id     BIGINT UNSIGNED NOT NULL,
+  user_id     BIGINT UNSIGNED NOT NULL,
+  created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (post_id, user_id),
+  KEY idx_pl_user (user_id),
   CONSTRAINT fk_pl_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   CONSTRAINT fk_pl_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS post_comments (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  post_id INT UNSIGNED NOT NULL,
-  user_id INT UNSIGNED NOT NULL,
-  body TEXT NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  post_id     BIGINT UNSIGNED NOT NULL,
+  user_id     BIGINT UNSIGNED NOT NULL,
+  parent_id   BIGINT UNSIGNED NULL COMMENT 'threaded / nested replies',
+  text        TEXT NOT NULL,
+  created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at  DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_pc_post (post_id),
+  KEY idx_pc_user (user_id),
+  KEY idx_pc_parent (parent_id),
   CONSTRAINT fk_pc_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
   CONSTRAINT fk_pc_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  KEY idx_pc_post (post_id)
+  CONSTRAINT fk_pc_parent FOREIGN KEY (parent_id) REFERENCES post_comments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------
+-- FOLLOWS / BLOCKS (social graph)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_follows (
+  follower_id  BIGINT UNSIGNED NOT NULL,
+  following_id BIGINT UNSIGNED NOT NULL,
+  created_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (follower_id, following_id),
+  KEY idx_uf_following (following_id),
+  CONSTRAINT fk_uf_follower FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_uf_following FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_blocks (
+  blocker_id  BIGINT UNSIGNED NOT NULL,
+  blocked_id  BIGINT UNSIGNED NOT NULL,
+  created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (blocker_id, blocked_id),
+  CONSTRAINT fk_ub_blocker FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ub_blocked FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- CHAT GROUPS + MESSAGES
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS chat_groups (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(160) NOT NULL,
-  created_by INT UNSIGNED NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_cg_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name        VARCHAR(160) NOT NULL,
+  team_id     BIGINT UNSIGNED NULL,
+  created_by  BIGINT UNSIGNED NOT NULL,
+  created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_cg_team (team_id),
+  CONSTRAINT fk_cg_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL,
+  CONSTRAINT fk_cg_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS chat_group_members (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  group_id INT UNSIGNED NOT NULL,
-  user_id INT UNSIGNED NOT NULL,
-  joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_cgm (group_id, user_id),
+  group_id    BIGINT UNSIGNED NOT NULL,
+  user_id     BIGINT UNSIGNED NOT NULL,
+  joined_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (group_id, user_id),
+  KEY idx_cgm_user (user_id),
   CONSTRAINT fk_cgm_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
   CONSTRAINT fk_cgm_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS messages (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sender_id INT UNSIGNED NOT NULL,
-  receiver_id INT UNSIGNED NULL,
-  group_id INT UNSIGNED NULL,
-  text TEXT NOT NULL,
-  attachments_json JSON NULL,
-  is_read TINYINT(1) NOT NULL DEFAULT 0,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_msg_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT fk_msg_receiver FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE SET NULL,
-  CONSTRAINT fk_msg_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
-  KEY idx_msg_dm (sender_id, receiver_id),
+  id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  sender_id         BIGINT UNSIGNED NOT NULL,
+  receiver_id       BIGINT UNSIGNED NULL COMMENT 'DM target',
+  group_id          BIGINT UNSIGNED NULL,
+  text              TEXT NOT NULL,
+  attachments_json  JSON NULL,
+  is_read           TINYINT(1) NOT NULL DEFAULT 0,
+  created_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_msg_sender (sender_id),
+  KEY idx_msg_receiver (receiver_id),
   KEY idx_msg_group (group_id),
-  KEY idx_msg_created (created_at)
+  KEY idx_msg_created (created_at),
+  CONSTRAINT fk_msg_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_msg_receiver FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_msg_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS teams (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  team_name VARCHAR(160) NOT NULL,
-  lead_user_id INT UNSIGNED NOT NULL,
-  performance_score DECIMAL(6,2) NOT NULL DEFAULT 0,
-  metrics_json JSON NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_teams_lead FOREIGN KEY (lead_user_id) REFERENCES users(id) ON DELETE CASCADE,
-  KEY idx_teams_score (performance_score)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS team_members (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  team_id INT UNSIGNED NOT NULL,
-  user_id INT UNSIGNED NOT NULL,
-  role_in_team VARCHAR(80) NOT NULL DEFAULT 'member',
-  joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_tm (team_id, user_id),
-  CONSTRAINT fk_tm_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
-  CONSTRAINT fk_tm_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
+-- ------------------------------------------------------------
+-- SUBSCRIPTIONS / BILLING
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS subscriptions (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id INT UNSIGNED NOT NULL,
-  stripe_customer_id VARCHAR(120) NULL,
-  stripe_subscription_id VARCHAR(120) NULL,
-  plan_type ENUM('free', 'pro', 'enterprise') NOT NULL DEFAULT 'free',
-  status VARCHAR(40) NOT NULL DEFAULT 'active',
-  current_period_end DATETIME NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id             BIGINT UNSIGNED NOT NULL,
+  stripe_customer_id  VARCHAR(191) NULL,
+  stripe_sub_id       VARCHAR(191) NULL,
+  plan                ENUM('free','pro','team','enterprise') NOT NULL DEFAULT 'free',
+  status              ENUM('active','canceled','past_due','trialing','incomplete') NOT NULL DEFAULT 'active',
+  current_period_end  DATETIME(3) NULL,
+  post_limit          INT UNSIGNED NOT NULL DEFAULT 20,
+  created_at          DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at          DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
   UNIQUE KEY uq_sub_user (user_id),
+  KEY idx_sub_stripe (stripe_customer_id),
   CONSTRAINT fk_sub_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------
+-- SYSTEM SETTINGS
+-- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS system_settings (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  setting_key VARCHAR(100) NOT NULL,
+  setting_key   VARCHAR(120) NOT NULL,
   setting_value TEXT NOT NULL,
-  UNIQUE KEY uq_setting_key (setting_key)
+  updated_at    DATETIME(3) NULL ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (setting_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-SET FOREIGN_KEY_CHECKS = 1;
-
-INSERT INTO users (id, email, password_hash, name, role, avatar_url, bio, status) VALUES
-(1, 'admin@best.app', '$2b$10$rQZ8K8Y5Y5Y5Y5Y5Y5Y5YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Admin User', 'admin', NULL, 'Platform administrator', 'offline'),
-(2, 'maya@best.app', '$2b$10$rQZ8K8Y5Y5Y5Y5Y5Y5Y5YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Maya Chen', 'pro_user', NULL, 'Product designer & AI enthusiast', 'offline'),
-(3, 'leo@best.app', '$2b$10$rQZ8K8Y5Y5Y5Y5Y5Y5Y5YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Leo Hart', 'user', NULL, 'Full-stack engineer', 'offline'),
-(4, 'sara@best.app', '$2b$10$rQZ8K8Y5Y5Y5Y5Y5Y5Y5YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Sara Kim', 'pro_user', NULL, 'Team lead · Creative ops', 'offline')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
-INSERT INTO todos (user_id, title, description, priority, ai_score, status, due_date, sort_order) VALUES
-(2, 'Q4 roadmap draft', 'Outline milestones and owners for Q4 launch', 'high', 88.50, 'in_progress', DATE_ADD(CURDATE(), INTERVAL 7 DAY), 1),
-(2, 'Design system tokens', 'Sync color/spacing tokens across GUI modules', 'medium', 62.00, 'pending', DATE_ADD(CURDATE(), INTERVAL 14 DAY), 2),
-(2, 'Ship whiteboard v1', 'Canvas save/load + shape tools', 'high', 91.00, 'pending', DATE_ADD(CURDATE(), INTERVAL 5 DAY), 3),
-(3, 'API rate limits', 'Add sliding window limiter on public endpoints', 'medium', 55.00, 'pending', DATE_ADD(CURDATE(), INTERVAL 10 DAY), 1),
-(3, 'Socket presence', 'Online/offline presence channel', 'low', 40.00, 'completed', NULL, 2);
-
-INSERT INTO notes (user_id, title, content, category, is_archived) VALUES
-(2, 'Workspace vision', 'Unified productivity + creative tools with AI scoring and real-time collab.', 'strategy', 0),
-(2, 'Meeting notes — Sprint 12', 'Focus on canvas persistence and chat read receipts this sprint.', 'meetings', 0),
-(3, 'DB pool tuning', 'connectionLimit=15, idleTimeout=60s, safeQuery wrappers everywhere.', 'engineering', 0);
-
-INSERT INTO boards (user_id, title, canvas_data_json) VALUES
-(2, 'Product flow', '{"version":1,"objects":[{"type":"rect","x":80,"y":60,"w":160,"h":80,"fill":"#8a6bff","text":"Ideate"},{"type":"rect","x":320,"y":60,"w":160,"h":80,"fill":"#38e8d0","text":"Build"},{"type":"line","x1":240,"y1":100,"x2":320,"y2":100}]}'),
-(3, 'API map', '{"version":1,"objects":[{"type":"rect","x":40,"y":40,"w":120,"h":60,"fill":"#ff6bcb","text":"Auth"},{"type":"rect","x":200,"y":40,"w":120,"h":60,"fill":"#8a6bff","text":"Todos"}]}');
-
-INSERT INTO posts (user_id, content, image_url, likes_count, comments_count) VALUES
-(2, 'Shipped the first AI priority scorer for todos. Rate any task and get a 0-100 urgency score.', NULL, 3, 1),
-(4, 'Team standup: we are locking the whiteboard JSON schema this week. Feedback welcome.', NULL, 2, 0),
-(3, 'Socket.IO presence is live on staging. Online indicators should feel instant now.', NULL, 5, 2);
-
-INSERT INTO post_comments (post_id, user_id, body) VALUES
-(1, 3, 'Love this — already using it on the roadmap board.'),
-(3, 2, 'Presence latency is under 100ms on my end. Nice work.');
-
-INSERT INTO teams (team_name, lead_user_id, performance_score, metrics_json) VALUES
-('Core Product', 4, 86.40, '{"completed_week":18,"wip":7,"velocity":22}'),
-('Platform Eng', 3, 79.20, '{"completed_week":14,"wip":5,"velocity":19}');
-
-INSERT INTO team_members (team_id, user_id, role_in_team) VALUES
-(1, 4, 'lead'),
-(1, 2, 'designer'),
-(1, 3, 'engineer'),
-(2, 3, 'lead'),
-(2, 1, 'admin');
-
-INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, plan_type, status, current_period_end) VALUES
-(1, NULL, NULL, 'enterprise', 'active', DATE_ADD(NOW(), INTERVAL 1 YEAR)),
-(2, NULL, NULL, 'pro', 'active', DATE_ADD(NOW(), INTERVAL 30 DAY)),
-(3, NULL, NULL, 'free', 'active', NULL),
-(4, NULL, NULL, 'pro', 'active', DATE_ADD(NOW(), INTERVAL 30 DAY));
-
 INSERT INTO system_settings (setting_key, setting_value) VALUES
-('announcement_banner', 'Welcome to BEST Workspace — AI scoring and real-time chat are live.'),
-('maintenance_mode', 'false'),
-('ai_model', 'gpt-4o-mini'),
-('ai_temperature', '0.3'),
-('max_free_todos', '50'),
-('max_free_boards', '3')
-ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
+  ('announcement_banner', ''),
+  ('maintenance_mode', '0'),
+  ('max_upload_mb', '10')
+ON DUPLICATE KEY UPDATE setting_key = setting_key;
+
+-- ============================================================
+-- OPTIONAL TEST DATA (commented — do NOT auto-run in prod)
+-- Password for examples: Password123!
+-- Generate hash with: node -e "console.log(require('bcryptjs').hashSync('Password123!',10))"
+-- ============================================================
+/*
+INSERT INTO users (email, password_hash, name, role, member_color) VALUES
+  ('admin@best.app', '$2a$10$REPLACE_WITH_REAL_BCRYPT_HASH', 'Admin', 'admin', '#6366F1'),
+  ('maya@best.app',  '$2a$10$REPLACE_WITH_REAL_BCRYPT_HASH', 'Maya Chen', 'user', '#22D3EE'),
+  ('leo@best.app',   '$2a$10$REPLACE_WITH_REAL_BCRYPT_HASH', 'Leo Park', 'pro_user', '#F472B6');
+
+INSERT INTO user_profiles (user_id, display_name, headline) VALUES
+  (1, 'Admin', 'System administrator'),
+  (2, 'Maya Chen', 'Product designer'),
+  (3, 'Leo Park', 'Full-stack engineer');
+
+INSERT INTO subscriptions (user_id, plan, status, post_limit) VALUES
+  (1, 'enterprise', 'active', 10000),
+  (2, 'free', 'active', 20),
+  (3, 'pro', 'active', 200);
+*/
+
+-- Done.
+SELECT 'BEST schema applied successfully' AS status;

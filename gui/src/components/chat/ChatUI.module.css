@@ -77,3 +77,24 @@
   .layout { grid-template-columns: 1fr; }
   .contacts { max-height: 180px; border-right: none; border-bottom: 1px solid var(--line); }
 }
+
+
+.dayDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dayDivider::before,
+.dayDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}

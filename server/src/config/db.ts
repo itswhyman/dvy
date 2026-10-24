@@ -4,6 +4,7 @@ import mysql, {
   RowDataPacket,
   ResultSetHeader,
 } from 'mysql2/promise';
+import { logDb, logEvent } from '../services/loggerService.js';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -35,6 +36,26 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.__bestPool = pool;
 }
 
+// Probe connection once at boot (non-blocking)
+pool
+  .query('SELECT 1')
+  .then(() => {
+    logEvent({
+      level: 'info',
+      category: 'db',
+      message: 'MariaDB pool ready',
+      meta: {
+        host: process.env.DB_HOST || '127.0.0.1',
+        database: process.env.DB_NAME || 'best_workspace',
+      },
+    });
+  })
+  .catch((err: unknown) => {
+    logDb('MariaDB pool connection failed at startup', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
+
 export async function safeQuery<T>(
   fn: () => Promise<T>,
   fallback: T,
@@ -43,7 +64,12 @@ export async function safeQuery<T>(
   try {
     return await fn();
   } catch (err) {
-    console.error(`[${label}]`, err instanceof Error ? err.message : err);
+    const message = err instanceof Error ? err.message : String(err);
+    logDb(`[${label}] ${message}`, {
+      label,
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    console.error(`[${label}]`, message);
     return fallback;
   }
 }
@@ -82,7 +108,16 @@ export function parseJson<T>(v: unknown, fallback: T): T {
   try {
     if (v == null) return fallback;
     return (typeof v === 'string' ? JSON.parse(v) : v) as T;
-  } catch {
+  } catch (err) {
+    logEvent({
+      level: 'warn',
+      category: 'db',
+      message: 'JSON parse failed',
+      meta: {
+        error: err instanceof Error ? err.message : String(err),
+        sample: typeof v === 'string' ? v.slice(0, 120) : typeof v,
+      },
+    });
     return fallback;
   }
 }

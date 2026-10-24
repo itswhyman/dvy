@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import type { JwtPayload } from '../types/index.js';
 import { execute, queryRows } from '../config/db.js';
 import type { RowDataPacket } from 'mysql2';
+import { logEvent, logSocket } from './loggerService.js';
 
 let io: Server | null = null;
 
@@ -37,12 +38,21 @@ export function initSocket(httpServer: HttpServer): Server {
       const token =
         (socket.handshake.auth?.token as string) ||
         (socket.handshake.headers.authorization as string)?.replace('Bearer ', '');
-      if (!token) return next(new Error('Unauthorized'));
+      if (!token) {
+        logEvent({ level: 'warn', category: 'socket', message: 'Unauthorized handshake — missing token' });
+        return next(new Error('Unauthorized'));
+      }
       const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
       const payload = jwt.verify(token, secret) as JwtPayload;
       (socket as Socket & { user: JwtPayload }).user = payload;
       next();
-    } catch {
+    } catch (err) {
+      logEvent({
+        level: 'warn',
+        category: 'socket',
+        message: 'Unauthorized handshake — invalid token',
+        meta: { error: err instanceof Error ? err.message : String(err) },
+      });
       next(new Error('Unauthorized'));
     }
   });
@@ -62,6 +72,7 @@ export function initSocket(httpServer: HttpServer): Server {
     io?.emit('presence:update', { userId: uid, status: 'online' });
 
     socket.join(`user:${uid}`);
+    logSocket('user connected', { userId: uid, socketId: socket.id });
 
     socket.on('chat:join', (payload: { groupId?: number; peerId?: number }) => {
       if (payload.groupId) socket.join(`group:${payload.groupId}`);
@@ -150,6 +161,7 @@ export function initSocket(httpServer: HttpServer): Server {
           onlineUsers.delete(uid);
           void setUserStatus(uid, 'offline');
           io?.emit('presence:update', { userId: uid, status: 'offline' });
+          logSocket('user disconnected', { userId: uid });
         }
       }
     });

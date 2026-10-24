@@ -25,6 +25,28 @@ export function setToken(token: string | null) {
   else localStorage.removeItem('best_token');
 }
 
+function clientLog(
+  level: 'error' | 'warn' | 'info',
+  message: string,
+  meta?: Record<string, unknown>
+) {
+  const payload = { ts: new Date().toISOString(), message, ...meta };
+  if (level === 'error') console.error('[api]', payload);
+  else if (level === 'warn') console.warn('[api]', payload);
+  else console.info('[api]', payload);
+
+  // Persist last errors for support / debug (ring of 30)
+  try {
+    if (typeof window === 'undefined') return;
+    const key = 'best_client_logs';
+    const prev = JSON.parse(localStorage.getItem(key) || '[]') as unknown[];
+    const next = [...prev, { level, ...payload }].slice(-30);
+    localStorage.setItem(key, JSON.stringify(next));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {}
@@ -47,6 +69,11 @@ export async function api<T>(
     });
     const json = (await res.json().catch(() => ({}))) as ApiResponse<T>;
     if (!res.ok) {
+      clientLog('warn', `Request failed (${res.status}) ${path}`, {
+        status: res.status,
+        error: json.error,
+        method: options.method || 'GET',
+      });
       return {
         success: false,
         error: json.error || `Request failed (${res.status})`,
@@ -55,7 +82,10 @@ export async function api<T>(
     }
     return json;
   } catch (err) {
-    console.error('[api]', path, err);
+    clientLog('error', `Network error on ${path}`, {
+      error: err instanceof Error ? err.message : String(err),
+      method: options.method || 'GET',
+    });
     return {
       success: false,
       error: 'Network error — server unreachable. Showing offline fallbacks where possible.',

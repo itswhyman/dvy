@@ -221,6 +221,30 @@ app.use(
 
 initSocket(server);
 
+// Process-level safety nets → always write to system logs
+process.on('unhandledRejection', (reason) => {
+  const message = reason instanceof Error ? reason.message : String(reason);
+  logEvent({
+    level: 'error',
+    category: 'system',
+    message: `unhandledRejection: ${message}`,
+    meta: {
+      stack: reason instanceof Error ? reason.stack : undefined,
+    },
+  });
+  console.error('[unhandledRejection]', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  logEvent({
+    level: 'error',
+    category: 'system',
+    message: `uncaughtException: ${err.message}`,
+    meta: { stack: err.stack },
+  });
+  console.error('[uncaughtException]', err);
+});
+
 pool.getConnection()
   .then((conn) => {
     console.log('✅ MariaDB Database connected successfully');
@@ -237,6 +261,13 @@ pool.getConnection()
     });
   })
   .catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    logEvent({
+      level: 'error',
+      category: 'db',
+      message: `Database connection failed at boot: ${message}`,
+      meta: { stack: error instanceof Error ? error.stack : undefined },
+    });
     console.error('❌ Database connection failed:', error);
     process.exit(1);
   });

@@ -3,7 +3,8 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { api } from '@/lib/api';
-import type { Note } from '@/types';
+import { useToast } from '@/components/common/ToastProvider';
+import type { Note, NoteTemplate } from '@/types';
 import styles from './NoteEditor.module.css';
 
 export default function NoteEditor() {
@@ -12,7 +13,9 @@ export default function NoteEditor() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('general');
+  const [template, setTemplate] = useState<NoteTemplate>('blank');
   const [q, setQ] = useState('');
+  const toast = useToast();
 
   const load = useCallback(async () => {
     const params = q ? `?q=${encodeURIComponent(q)}` : '';
@@ -29,6 +32,7 @@ export default function NoteEditor() {
     setTitle(n.title);
     setContent(n.content);
     setCategory(n.category);
+    setTemplate((n.template as NoteTemplate) || 'blank');
   }
 
   function newNote() {
@@ -36,6 +40,7 @@ export default function NoteEditor() {
     setTitle('');
     setContent('');
     setCategory('general');
+    setTemplate('blank');
   }
 
   async function save(e: FormEvent) {
@@ -45,20 +50,26 @@ export default function NoteEditor() {
     if (active) {
       const res = await api<Note>(`/notes/${active.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ title, content, category }),
+        body: JSON.stringify({ title, content, category, template }),
       });
       if (res.data) {
         setNotes((prev) => prev.map((n) => (n.id === res.data!.id ? res.data! : n)));
         setActive(res.data);
+        toast.success('Note saved');
+      } else {
+        toast.error(res.error || 'Save failed');
       }
     } else {
       const res = await api<Note>('/notes', {
         method: 'POST',
-        body: JSON.stringify({ title, content, category }),
+        body: JSON.stringify({ title, content, category, template }),
       });
       if (res.data) {
         setNotes((prev) => [res.data!, ...prev]);
         setActive(res.data);
+        toast.success('Note created');
+      } else {
+        toast.error(res.error || 'Create failed');
       }
     }
   }
@@ -149,6 +160,7 @@ export default function NoteEditor() {
             className={styles.body}
             placeholder="Write your note…"
             value={content}
+          data-template={template}
             onChange={(e) => setContent(e.target.value)}
             rows={18}
           />

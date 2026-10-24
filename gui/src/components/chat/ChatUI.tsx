@@ -24,6 +24,21 @@ function resolveWsUrl(): string | undefined {
   return 'http://localhost:4000';
 }
 
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yday = new Date();
+  yday.setDate(today.getDate() - 1);
+  if (dayKey(iso) === dayKey(today.toISOString())) return 'Today';
+  if (dayKey(iso) === dayKey(yday.toISOString())) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 export default function ChatUI() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<ChatContact[]>([]);
@@ -195,16 +210,22 @@ export default function ChatUI() {
                 </span>
               </div>
               <div className={styles.messages}>
-                {messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`${styles.bubble} ${
-                      m.sender_id === user?.id ? styles.mine : styles.theirs
-                    }`}
-                  >
-                    {m.text}
-                  </div>
-                ))}
+                {messages.map((m, i) => {
+                  const showDay =
+                    i === 0 || dayKey(messages[i - 1].created_at) !== dayKey(m.created_at);
+                  return (
+                    <div key={m.id}>
+                      {showDay && <div className={styles.dayDivider}>{dayLabel(m.created_at)}</div>}
+                      <div
+                        className={`${styles.bubble} ${
+                          m.sender_id === user?.id ? styles.mine : styles.theirs
+                        }`}
+                      >
+                        {m.text}
+                      </div>
+                    </div>
+                  );
+                })}
                 {typing && <div className={styles.typing}>typing…</div>}
                 <div ref={bottomRef} />
               </div>

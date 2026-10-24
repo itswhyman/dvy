@@ -9,6 +9,7 @@ import * as messages from '../controllers/messageController.js';
 import * as teams from '../controllers/teamController.js';
 import * as payments from '../controllers/paymentController.js';
 import * as admin from '../controllers/adminController.js';
+import * as social from '../controllers/socialController.js';
 
 const router = Router();
 
@@ -21,11 +22,16 @@ router.post('/auth/password', requireAuth, auth.changePassword);
 
 // ── Todos ───────────────────────────────────────────────────
 router.get('/todos', requireAuth, todos.listTodos);
+router.get('/todos/stats', requireAuth, todos.todoStats);
 router.post('/todos', requireAuth, todos.createTodo);
 router.patch('/todos/:id', requireAuth, todos.updateTodo);
 router.delete('/todos/:id', requireAuth, todos.deleteTodo);
 router.post('/todos/reorder', requireAuth, todos.reorderTodos);
 router.post('/todos/:id/ai-rate', requireAuth, todos.rateWithAi);
+router.get('/todos/:id/sub', requireAuth, todos.listSubTodos);
+router.post('/todos/:id/sub', requireAuth, todos.createSubTodo);
+router.patch('/todos/:id/sub/:subId', requireAuth, todos.updateSubTodo);
+router.delete('/todos/:id/sub/:subId', requireAuth, todos.deleteSubTodo);
 
 // ── Notes ───────────────────────────────────────────────────
 router.get('/notes', requireAuth, notes.listNotes);
@@ -47,6 +53,14 @@ router.post('/posts', requireAuth, posts.createPost);
 router.post('/posts/:id/like', requireAuth, posts.toggleLike);
 router.get('/posts/:id/comments', requireAuth, posts.listComments);
 router.post('/posts/:id/comments', requireAuth, posts.addComment);
+
+// ── Social ──────────────────────────────────────────────────
+router.post('/users/:id/follow', requireAuth, social.follow);
+router.delete('/users/:id/follow', requireAuth, social.unfollow);
+router.post('/users/:id/block', requireAuth, social.block);
+router.delete('/users/:id/block', requireAuth, social.unblock);
+router.get('/users/following', requireAuth, social.listFollowing);
+router.get('/users/:id/profile', requireAuth, social.publicProfile);
 
 // ── Messages ────────────────────────────────────────────────
 router.get('/messages/contacts', requireAuth, messages.listContacts);

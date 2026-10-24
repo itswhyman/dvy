@@ -11,11 +11,13 @@ function mapNote(r: RowDataPacket): Note {
     user_id: Number(r.user_id),
     title: String(r.title),
     content: String(r.content ?? ''),
+    template: (r.template as Note['template']) || 'blank',
     category: String(r.category ?? 'general'),
+    project_desc: r.project_desc != null ? String(r.project_desc) : null,
     is_archived: Boolean(r.is_archived),
     created_at: new Date(r.created_at as string).toISOString(),
-    updated_at: new Date(r.updated_at as string).toISOString(),
-  };
+    updated_at: new Date((r.updated_at || r.created_at) as string).toISOString(),
+  } as Note;
 }
 
 export async function listNotes(req: AuthRequest, res: Response): Promise<void> {
@@ -43,10 +45,12 @@ export async function listNotes(req: AuthRequest, res: Response): Promise<void> 
 
 export async function createNote(req: AuthRequest, res: Response): Promise<void> {
   const userId = req.user!.userId;
-  const { title, content, category } = req.body as {
+  const { title, content, category, template, project_desc } = req.body as {
     title: string;
     content: string;
     category?: string;
+    template?: string;
+    project_desc?: string;
   };
 
   if (!title?.trim()) {
@@ -54,11 +58,18 @@ export async function createNote(req: AuthRequest, res: Response): Promise<void>
     return;
   }
 
-  const result = await execute(
-    `INSERT INTO notes (user_id, title, content, category) VALUES (?, ?, ?, ?)`,
-    [userId, title.trim().slice(0, 255), content ?? '', category || 'general'],
+  let result = await execute(
+    `INSERT INTO notes (user_id, title, content, category, template, project_desc) VALUES (?, ?, ?, ?, ?, ?)`,
+    [userId, title.trim().slice(0, 255), content ?? '', category || 'general', template || 'blank', project_desc || null],
     'notes:create'
   );
+  if (!result?.insertId) {
+    result = await execute(
+      `INSERT INTO notes (user_id, title, content, category) VALUES (?, ?, ?, ?)`,
+      [userId, title.trim().slice(0, 255), content ?? '', category || 'general'],
+      'notes:create:legacy'
+    );
+  }
 
   if (!result?.insertId) {
     res.status(503).json({ success: false, error: 'Could not create note.' });
@@ -76,20 +87,24 @@ export async function createNote(req: AuthRequest, res: Response): Promise<void>
 export async function updateNote(req: AuthRequest, res: Response): Promise<void> {
   const userId = req.user!.userId;
   const id = Number(req.params.id);
-  const { title, content, category, is_archived } = req.body as Partial<Note>;
+  const { title, content, category, is_archived, template, project_desc } = req.body as Partial<Note> & { template?: string; project_desc?: string };
 
   await execute(
     `UPDATE notes SET
       title = COALESCE(?, title),
       content = COALESCE(?, content),
       category = COALESCE(?, category),
-      is_archived = COALESCE(?, is_archived)
+      is_archived = COALESCE(?, is_archived),
+      template = COALESCE(?, template),
+      project_desc = COALESCE(?, project_desc)
      WHERE id = ? AND user_id = ?`,
     [
       title ?? null,
       content ?? null,
       category ?? null,
       is_archived === undefined ? null : is_archived ? 1 : 0,
+      template ?? null,
+      project_desc ?? null,
       id,
       userId,
     ],
