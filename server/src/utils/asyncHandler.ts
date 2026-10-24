@@ -16,10 +16,8 @@ export function asyncHandler<
   return (req: Req, res: Res, next: NextFunction): void => {
     Promise.resolve(fn(req, res, next)).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
-      const userId =
-        (req as AuthRequest).user?.userId ??
-        (req as AuthRequest).user?.id ??
-        null;
+      // JwtPayload uses `userId` (see server/src/types/index.ts)
+      const userId = (req as AuthRequest).user?.userId ?? null;
 
       logEvent({
         level: 'error',
@@ -28,7 +26,7 @@ export function asyncHandler<
         statusCode: 500,
         method: req.method,
         path: req.originalUrl || req.path,
-        userId: typeof userId === 'number' ? userId : null,
+        userId,
         meta: {
           label,
           stack: err instanceof Error ? err.stack : undefined,

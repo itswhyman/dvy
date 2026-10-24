@@ -28,12 +28,17 @@ export interface Todo {
   created_at: string;
 }
 
+export type NoteTemplate = 'blank' | 'grid' | 'lined' | 'dotted' | 'music' | 'calendar';
+
 export interface Note {
   id: number;
   user_id: number;
   title: string;
   content: string;
+  /** Page template (optional for legacy rows) */
+  template?: NoteTemplate;
   category: string;
+  project_desc?: string | null;
   is_archived: boolean;
   created_at: string;
   updated_at: string;
