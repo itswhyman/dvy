@@ -7,6 +7,23 @@ import { useAuth } from '@/lib/auth';
 import type { ChatContact, ChatMessage } from '@/types';
 import styles from './ChatUI.module.css';
 
+/**
+ * Dynamic Socket.IO URL:
+ * - NEXT_PUBLIC_WS_URL set → use it
+ * - Browser (production / same-origin) → undefined → connects to current origin
+ *   (works with next.config.mjs /socket.io rewrite)
+ * - SSR / fallback → localhost:4000 only for local dev safety
+ */
+function resolveWsUrl(): string | undefined {
+  const env = process.env.NEXT_PUBLIC_WS_URL?.trim();
+  if (env) return env.replace(/\/$/, '');
+  if (typeof window !== 'undefined') {
+    // Same origin — Next.js rewrite proxies /socket.io → Express
+    return undefined;
+  }
+  return 'http://localhost:4000';
+}
+
 export default function ChatUI() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<ChatContact[]>([]);
@@ -18,6 +35,12 @@ export default function ChatUI() {
   const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const peerRef = useRef<ChatContact | null>(null);
+
+  // Keep peer in ref so socket handlers always see current value
+  useEffect(() => {
+    peerRef.current = peer;
+  }, [peer]);
 
   const loadContacts = useCallback(async () => {
     const res = await api<ChatContact[]>('/messages/contacts');
@@ -28,20 +51,40 @@ export default function ChatUI() {
     void loadContacts();
   }, [loadContacts]);
 
+  // Socket connection — only once (not on every peer change)
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('best_token') : null;
     if (!token) return;
 
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000';
+    const wsUrl = resolveWsUrl();
     const socket = io(wsUrl, {
+      path: '/socket.io',
       auth: { token },
       transports: ['websocket', 'polling'],
+      withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
     socketRef.current = socket;
 
+    socket.on('connect', () => {
+      console.debug('[socket] connected', socket.id);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('[socket] connect_error', err.message);
+    });
+
     socket.on('chat:message', (msg: ChatMessage) => {
+      const currentPeer = peerRef.current;
       setMessages((prev) => {
-        if (peer && (msg.sender_id === peer.id || msg.receiver_id === peer.id)) {
+        if (
+          currentPeer &&
+          (msg.sender_id === currentPeer.id || msg.receiver_id === currentPeer.id)
+        ) {
           return [...prev, msg];
         }
         return prev;
@@ -55,7 +98,8 @@ export default function ChatUI() {
     });
 
     socket.on('chat:typing', (p: { userId: number }) => {
-      if (peer && p.userId === peer.id) {
+      const currentPeer = peerRef.current;
+      if (currentPeer && p.userId === currentPeer.id) {
         setTyping(true);
         if (typingTimer.current) clearTimeout(typingTimer.current);
         typingTimer.current = setTimeout(() => setTyping(false), 1500);
@@ -70,8 +114,9 @@ export default function ChatUI() {
 
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
-  }, [peer]);
+  }, []); // only once on mount
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

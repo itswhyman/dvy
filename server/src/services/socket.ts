@@ -9,12 +9,27 @@ let io: Server | null = null;
 
 const onlineUsers = new Map<number, Set<string>>(); // userId -> socketIds
 
-export function initSocket(httpServer: HttpServer): Server {
-  const origin = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+function resolveCorsOrigin(): string | string[] | boolean {
+  const raw = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+  const list = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (list.length === 0) return true;
+  if (list.length === 1) return list[0];
+  return list;
+}
 
+export function initSocket(httpServer: HttpServer): Server {
   io = new Server(httpServer, {
-    cors: { origin, credentials: true },
+    cors: {
+      origin: resolveCorsOrigin(),
+      credentials: true,
+      methods: ['GET', 'POST'],
+    },
     path: '/socket.io',
+    transports: ['websocket', 'polling'],
+    allowEIO3: true,
   });
 
   io.use((socket, next) => {
