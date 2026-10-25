@@ -62,7 +62,7 @@ npm run dev            # http://localhost:3000
 Kök `package.json` artık standart `build` ve `start` script’lerine sahiptir:
 
 ```bash
-npm run build   # server (tsc) + gui (next build)
+npm run build   # server (tsx runtime) + gui (next build)
 npm start       # scripts/start-prod.mjs → API :4000 + Next :$PORT
 ```
 

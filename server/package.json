@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "echo 'server: using tsx runtime (no tsc step)'",
+    "start": "tsx src/index.ts",
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
@@ -22,14 +22,12 @@
     "socket.io": "^4.8.0",
     "stripe": "^17.0.0",
     "zod": "^3.23.8",
+    "tsx": "^4.19.0",
     "@types/node": "^22.10.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
     "typescript": "^5.6.0"
-  },
-  "devDependencies": {
-    "tsx": "^4.19.0"
   }
 }

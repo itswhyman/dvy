@@ -1,6 +1,6 @@
 {
   "name": "best-workspace",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "BEST Ultimate Workspace — monorepo (server + gui)",
   "workspaces": [
