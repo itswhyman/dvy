@@ -24,11 +24,36 @@
   padding: 10px 18px;
   border-radius: 999px;
   border: none;
-  background: var(--violet);
+  background: var(--gradient-brand);
   color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--glow-accent);
+}
+
+.templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tplBtn {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: var(--glow-violet);
+  transition: all 0.15s var(--ease);
+}
+.tplBtn:hover { color: var(--text); border-color: var(--line-strong); }
+.tplOn {
+  color: #fff;
+  border-color: transparent;
+  background: var(--gradient-brand);
+  box-shadow: var(--glow-accent);
 }
 
 .layout {
@@ -164,15 +189,59 @@
   padding: 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--bg-elevated);
+  color: var(--text);
   resize: vertical;
   min-height: 280px;
-  line-height: 1.6;
+  line-height: 1.65;
+  font-family: inherit;
 }
 
 .editor .body:focus {
   outline: none;
-  border-color: rgba(54, 232, 208, 0.4);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 109, 74, 0.12);
+}
+
+/* Visual paper templates */
+.tpl_grid {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-color: var(--bg-elevated);
+}
+.tpl_lined {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 27px,
+    var(--line) 28px
+  );
+  background-color: var(--bg-elevated);
+  line-height: 28px;
+}
+.tpl_dotted {
+  background-image: radial-gradient(var(--line-strong) 1.2px, transparent 1.2px);
+  background-size: 18px 18px;
+  background-color: var(--bg-elevated);
+}
+.tpl_music {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 11px,
+    var(--line) 12px,
+    var(--line) 12px,
+    transparent 13px,
+    transparent 47px
+  );
+  background-color: var(--bg-elevated);
+}
+.tpl_calendar {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 14.28% 16.66%;
+  background-color: var(--bg-elevated);
 }
 
 .saveBtn {
@@ -180,11 +249,11 @@
   padding: 12px 24px;
   border: none;
   border-radius: 999px;
-  background: var(--cyan);
-  color: #061018;
+  background: var(--gradient-brand);
+  color: #fff;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--glow-cyan);
+  box-shadow: var(--glow-accent);
 }
 
 @media (max-width: 800px) {

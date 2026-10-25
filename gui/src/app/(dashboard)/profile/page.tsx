@@ -24,10 +24,10 @@ export default function ProfilePage() {
       avatar_url: avatarUrl || undefined,
     });
     if (res.success) {
-      setMsg('Profile updated.');
+      setMsg('Profil güncellendi.');
       await refresh();
     } else {
-      setMsg(res.error || 'Update failed');
+      setMsg(res.error || 'Güncelleme başarısız');
     }
   }
 
@@ -39,11 +39,11 @@ export default function ProfilePage() {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
     if (res.success) {
-      setPwdMsg('Password changed.');
+      setPwdMsg('Şifre değiştirildi.');
       setCurrentPassword('');
       setNewPassword('');
     } else {
-      setPwdMsg(res.error || 'Password change failed');
+      setPwdMsg(res.error || 'Şifre değiştirilemedi');
     }
   }
 
@@ -51,21 +51,21 @@ export default function ProfilePage() {
     <div className={styles.wrap}>
       <header className={styles.head}>
         <div>
-          <h1 className={styles.title}>Profile & Settings</h1>
+          <h1 className={styles.title}>Profil & Ayarlar</h1>
           <p className={styles.sub}>
             {user?.email} · {user?.role}
           </p>
         </div>
         <Link href="/billing" className={styles.billingLink}>
-          Billing & Plans →
+          Faturalama & Planlar →
         </Link>
       </header>
 
       <div className={styles.grid}>
         <form className={styles.form} onSubmit={save}>
-          <h2 className={styles.section}>Public profile</h2>
+          <h2 className={styles.section}>Herkese açık profil</h2>
           <label className={styles.field}>
-            <span>Name</span>
+            <span>İsim</span>
             <input
               className={styles.input}
               value={name}
@@ -82,7 +82,7 @@ export default function ProfilePage() {
             />
           </label>
           <label className={styles.field}>
-            <span>Bio</span>
+            <span>Biyografi</span>
             <textarea
               className={styles.textarea}
               value={bio}
@@ -92,14 +92,14 @@ export default function ProfilePage() {
           </label>
           {msg && <p className={styles.msg}>{msg}</p>}
           <button type="submit" className={styles.save}>
-            Save profile
+            Profili kaydet
           </button>
         </form>
 
         <form className={styles.form} onSubmit={changePassword}>
-          <h2 className={styles.section}>Security</h2>
+          <h2 className={styles.section}>Güvenlik</h2>
           <label className={styles.field}>
-            <span>Current password</span>
+            <span>Mevcut şifre</span>
             <input
               className={styles.input}
               type="password"
@@ -109,7 +109,7 @@ export default function ProfilePage() {
             />
           </label>
           <label className={styles.field}>
-            <span>New password</span>
+            <span>Yeni şifre</span>
             <input
               className={styles.input}
               type="password"
@@ -121,7 +121,7 @@ export default function ProfilePage() {
           </label>
           {pwdMsg && <p className={styles.msg}>{pwdMsg}</p>}
           <button type="submit" className={styles.save}>
-            Change password
+            Şifreyi değiştir
           </button>
         </form>
       </div>

@@ -6,7 +6,9 @@ const client =
     : null;
 
 export interface AiScoreResult {
+  /** 0–100 urgency/importance score */
   score: number;
+  /** Legacy label kept for compatibility */
   priority: 'low' | 'medium' | 'high' | 'ai_suggested';
   rationale: string;
 }

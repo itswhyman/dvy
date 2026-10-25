@@ -17,11 +17,11 @@
   cursor: pointer; text-align: left; transition: background 0.2s;
 }
 .contact:hover { background: rgba(255,255,255,0.04); }
-.contactOn { background: rgba(54,232,208,0.1); }
+.contactOn { background: var(--gradient-glow); }
 .av {
   width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--violet), var(--cyan));
-  display: grid; place-items: center; font-weight: 700; color: #0a0a14; flex-shrink: 0;
+  background: var(--gradient-brand);
+  display: grid; place-items: center; font-weight: 700; color: #fff; flex-shrink: 0;
 }
 .cinfo { display: grid; min-width: 0; }
 .cinfo strong { font-size: 0.9rem; }
@@ -41,7 +41,9 @@
   line-height: 1.45; animation: fadeUp 0.25s var(--ease);
 }
 .mine {
-  align-self: flex-end; background: rgba(54,232,208,0.18); border: 1px solid rgba(54,232,208,0.3);
+  align-self: flex-end;
+  background: var(--gradient-glow);
+  border: 1px solid var(--line-glow);
   border-bottom-right-radius: 4px;
 }
 .theirs {
@@ -54,12 +56,17 @@
 }
 .input {
   flex: 1; padding: 12px 14px; border-radius: 999px; border: 1px solid var(--line);
-  background: rgba(0,0,0,0.25);
+  background: var(--bg-elevated); color: var(--text);
 }
-.composer .input:focus { outline: none; border-color: rgba(54,232,208,0.45); }
+.composer .input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 109, 74, 0.12);
+}
 .send {
   padding: 12px 20px; border: none; border-radius: 999px;
-  background: var(--cyan); color: #061018; font-weight: 700; cursor: pointer;
+  background: var(--gradient-brand); color: #fff; font-weight: 700; cursor: pointer;
+  box-shadow: var(--glow-accent);
 }
 .empty {
   flex: 1; display: grid; place-items: center; color: var(--muted); font-size: 0.95rem;

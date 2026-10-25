@@ -1,136 +1,93 @@
-# BEST Ultimate Workspace & Creative Ecosystem
+# BEST Ultimate Workspace
 
-Modern monorepo: **server** (Express + Socket.IO + MariaDB) · **gui** (Next.js 15 App Router, TypeScript, Pure CSS Modules — no Tailwind).
+AI destekli üretkenlik ve işbirliği platformu.  
+**Stack:** Node.js / Express · MariaDB · Socket.IO · Next.js 15 · TypeScript
 
-Premium dual-theme UI, AI-assisted productivity modules, realtime collaboration.
-
-## Stack
-
-| Layer     | Technology                                      |
-|-----------|-------------------------------------------------|
-| Frontend  | Next.js 15 (App Router), React 19, TypeScript strict, CSS Modules |
-| Backend   | Node.js 20+, Express, Socket.IO, JWT, bcrypt, Helmet |
-| Database  | MariaDB (mysql2/promise)                        |
-| AI        | OpenAI task priority scoring                    |
-| Payments  | Stripe PaymentIntents & Subscriptions           |
-
-## Project structure
+## Dizinler
 
 ```
-best-workspace/          (or dvy/)
-├── package.json         # workspaces + concurrent scripts
-├── schema.sql           # MariaDB schema
-├── ARCHITECTURE.md
-├── .gitignore
-├── server/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── types/
-│   ├── scripts/seed.ts
-│   ├── package.json
-│   └── .env.example
-└── gui/
-    ├── src/
-    │   ├── app/             # App Router (auth + dashboard groups)
-    │   ├── components/      # Feature + shared UI
-    │   ├── lib/             # api, auth, theme
-    │   ├── styles/          # globals.css (design tokens)
-    │   └── types/
-    ├── public/
-    ├── next.config.mjs
-    ├── package.json
-    └── .env.example
+dvy/
+├── schema.sql          # MariaDB şema + migration
+├── ARCHITECTURE.md     # Mimari rapor
+├── server/             # REST API + WebSocket (:4000)
+└── gui/                # Next.js 15 App Router (:3000)
 ```
 
-## Quick start
+## Hızlı başlangıç
+
+### 1. Veritabanı
 
 ```bash
-# 1. Database
 mysql -u root -p < schema.sql
-
-# 2. Environment
-cp server/.env.example server/.env
-cp gui/.env.example gui/.env.local
-# Fill: DB_*, JWT_SECRET, OPENAI_API_KEY, STRIPE_* (optional)
-
-# 3. Install
-npm install
-
-# 4. Seed demo users (bcrypt passwords)
-npm run seed
-
-# 5. Development
-npm run dev
-# API  → http://localhost:4000
-# GUI  → http://localhost:3000
 ```
 
-### Demo accounts (after seed)
-
-| Email             | Password      | Role  |
-|-------------------|---------------|-------|
-| admin@best.app    | Password123!  | admin |
-| maya@best.app     | Password123!  | user  |
-| leo@best.app      | Password123!  | user  |
-
-## Production build
+### 2. Backend
 
 ```bash
-npm run build          # builds server + gui
-npm run start          # concurrent production start
+cd server
+cp .env.example .env   # DB + JWT + isteğe bağlı OpenAI/Stripe
+npm install
+npm run seed           # demo kullanıcılar (opsiyonel)
+npm run dev            # http://localhost:4000
 ```
 
-Or deploy separately:
+Health: `GET http://localhost:4000/health`
 
-- **GUI** → Vercel / any Node host (set `API_INTERNAL_URL` or `NEXT_PUBLIC_API_URL`)
-- **Server** → Coolify / VPS / Docker (expose 4000, connect MariaDB)
+### 3. Frontend
 
-### Environment variables
-
-**gui/.env.local**
-
-```
-NEXT_PUBLIC_API_URL=          # empty = same-origin /api rewrite
-NEXT_PUBLIC_WS_URL=
-API_INTERNAL_URL=http://127.0.0.1:4000
+```bash
+cd gui
+cp .env.example .env.local   # boş bırakılabilir (rewrite /api → backend)
+npm install
+npm run dev                  # http://localhost:3000
 ```
 
-**server/.env** — see `server/.env.example` for DB, JWT, OpenAI, Stripe.
+`next.config.mjs` production’da `/api` ve `/socket.io` isteklerini Express’e proxy’ler.
 
-## Modules
+## Demo hesaplar (seed sonrası)
 
-- Auth (JWT + protected dashboard)
-- AI Todos (priority scoring, Kanban)
-- Notes + PDF export
-- Visual Boards / Canvas
-- Social Feed
-- Realtime Chat (Socket.IO)
-- Teams & analytics
-- Admin center
-- Stripe billing
+| E-posta | Şifre |
+|---------|--------|
+| maya@best.app | Password123! |
+| admin@best.app | Password123! |
 
-## Design system
+## Özellikler (bu sürüm)
 
-- Pure CSS Modules + CSS custom properties
-- Dual theme (light / dark) via `data-theme` + ThemeProvider
-- Accent: indigo → violet gradient
-- Glass surfaces, soft shadows, reduced-motion support
-- Inter (next/font) for optimal loading
+- **Auth:** JWT kayıt / giriş / profil / şifre
+- **Todos:** 0–5 yıldız rating (0.5 adım), sticker, not, due, nested sub-todo, AI rate, kanban drag-drop
+- **Notes:** blank/grid/lined/dotted/music/calendar şablonları, AI özet, PDF export
+- **Boards:** canvas şekil/ok/metin, JSON persist
+- **Chat:** Socket.IO anlık mesaj, presence, typing
+- **Teams:** oluşturma, immutable member_color, performans
+- **Feed:** post, like, comment
+- **Billing:** Stripe checkout iskeleti
+- **Admin:** log paneli
 
-## Scripts
+## Renk / UI
 
-| Command          | Description                    |
-|------------------|--------------------------------|
-| `npm run dev`    | Concurrent server + gui        |
-| `npm run build`  | Production build both          |
-| `npm run start`  | Production start               |
-| `npm run seed`   | Seed demo users                |
-| `npm run lint -w gui` | ESLint                     |
+Aurora design system — glass surface, gradient brand (`#E86D4A` → `#C9A227` → `#2A9D8F`), dark/light tema.
 
-## License
+## Production notları
 
-Private / proprietary.
+1. `schema.sql` içindeki `ALTER ... sticker` migration’ını mevcut DB’lerde çalıştır.
+2. Express: `CLIENT_ORIGIN` = gerçek domain(ler)
+3. Next: `API_INTERNAL_URL` = internal Express adresi (Coolify/Docker)
+4. `JWT_SECRET` ve Stripe/OpenAI anahtarlarını production secret store’dan ver.
+
+## API özeti
+
+| Prefix | Açıklama |
+|--------|----------|
+| `/api/auth/*` | register, login, me, profile, password |
+| `/api/todos` | CRUD + reorder + ai-rate + sub |
+| `/api/notes` | CRUD + summarize |
+| `/api/boards` | CRUD + canvas JSON |
+| `/api/posts` | list, create, like, comments |
+| `/api/messages/*` | contacts, dm, presence |
+| `/api/teams` | list, get, create, analytics |
+| `/api/billing/*` | subscription, checkout, webhook |
+| `/api/admin/*` | admin only |
+
+---
+
+BEST Workspace · 2026

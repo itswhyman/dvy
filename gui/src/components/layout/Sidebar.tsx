@@ -7,16 +7,16 @@ import ThemeToggle from '@/components/common/ThemeToggle';
 import styles from './Sidebar.module.css';
 
 const PRIMARY = [
-  { href: '/feed', label: 'Home', icon: '◎' },
+  { href: '/feed', label: 'Akış', icon: '◎' },
   { href: '/todos', label: 'Todos', icon: '☑' },
-  { href: '/notes', label: 'Notes', icon: '✎' },
-  { href: '/boards', label: 'Boards', icon: '◫' },
-  { href: '/chat', label: 'Chat', icon: '💬' },
-  { href: '/teams', label: 'Teams', icon: '◈' },
+  { href: '/notes', label: 'Notlar', icon: '✎' },
+  { href: '/boards', label: 'Tahta', icon: '◫' },
+  { href: '/chat', label: 'Mesajlar', icon: '💬' },
+  { href: '/teams', label: 'Ekipler', icon: '◈' },
 ];
 
 const SECONDARY = [
-  { href: '/profile', label: 'Profile & Settings', icon: '○' },
+  { href: '/profile', label: 'Profil & Ayarlar', icon: '○' },
 ];
 
 export default function Sidebar() {

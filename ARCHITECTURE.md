@@ -93,9 +93,10 @@ best-workspace/
 - **Bağlantı:** `mysql2/promise` pool (`connectionLimit: 15`), `config/db.ts`.
 - **API:** `queryRows` / `execute` + `safeQuery` (hata → fallback, process crash yok).
 - **ORM yok** — ham SQL + typed RowDataPacket.
-- **Tablolar (özet):** users, todos, notes, boards, posts, post_likes, comments, messages, teams, team_members, subscriptions, system_settings, …
+- **Tablolar (özet):** users, todos (+ sticker, priority 0.0–5.0 step 0.5, nested sub_todos), notes (template), boards, posts, post_likes, comments, messages, teams, team_members (member_color), subscriptions, system_settings, …
 - **Seed:** `npm run seed` → `server/scripts/seed.ts` (bcrypt hash’li demo: admin@best.app, maya@best.app, … / `Password123!`).
 - **Env:** `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
+- **Todo rating:** `priority` DECIMAL(2,1) 0–5 (0.5 adım). AI skoru 0–100 → yıldız rating’e map edilir. `sticker` görsel etiket.
 
 ---
 

@@ -7,12 +7,12 @@ import { useAuth } from '@/lib/auth';
 import styles from './page.module.css';
 
 const FEATURES = [
-  { title: 'AI-Powered Todos', desc: 'Smart task scoring, velocity tracking and weekly focus modes.', icon: '✓' },
-  { title: 'Realtime Chat', desc: 'Team channels with presence, mentions and instant delivery.', icon: '💬' },
-  { title: 'Visual Boards', desc: 'Kanban-style canvases for projects, sprints and creative work.', icon: '▦' },
-  { title: 'Notes & Knowledge', desc: 'Rich notes with AI assist, tags and team sharing.', icon: '✎' },
-  { title: 'Teams & Roles', desc: 'Performance scores, leads and fine-grained permissions.', icon: '◎' },
-  { title: 'Billing Ready', desc: 'Stripe-powered plans from Free to Enterprise.', icon: '◆' },
+  { title: 'AI Destekli Todos', desc: 'Akıllı öncelik, yıldız rating, alt görevler ve odak modları.', icon: '✓' },
+  { title: 'Anlık Mesajlaşma', desc: 'Presence, yazıyor göstergesi ve anlık teslimat.', icon: '💬' },
+  { title: 'Yazım Tahtası', desc: 'Şekil, ok ve metin ile görsel planlama tahtaları.', icon: '▦' },
+  { title: 'Notlar & Bilgi', desc: 'Şablonlu notlar, AI özet ve PDF dışa aktarma.', icon: '✎' },
+  { title: 'Ekipler & Roller', desc: 'Sabit üye renkleri, performans ve izinler.', icon: '◎' },
+  { title: 'Ödeme Hazır', desc: 'Stripe ile Free’den Enterprise’a planlar.', icon: '◆' },
 ];
 
 export default function LandingPage() {
@@ -38,17 +38,17 @@ export default function LandingPage() {
             <span className={styles.logoText}>BEST</span>
           </Link>
           <nav className={styles.navLinks}>
-            <a href="#features">Features</a>
-            <a href="#pricing">Pricing</a>
+            <a href="#features">Özellikler</a>
+            <a href="#pricing">Fiyatlar</a>
             <button type="button" className={styles.navGhost} onClick={() => goProtected('/feed')}>
-              Dashboard
+              Panel
             </button>
             {user ? (
-              <Link href="/feed" className={styles.navCta}>Open Workspace</Link>
+              <Link href="/feed" className={styles.navCta}>Çalışma alanını aç</Link>
             ) : (
               <>
-                <Link href="/login" className={styles.navGhost}>Sign in</Link>
-                <Link href="/register" className={styles.navCta}>Get started</Link>
+                <Link href="/login" className={styles.navGhost}>Giriş</Link>
+                <Link href="/register" className={styles.navCta}>Başla</Link>
               </>
             )}
           </nav>
@@ -56,36 +56,36 @@ export default function LandingPage() {
       </header>
 
       <section className={styles.hero}>
-        <div className={styles.heroBadge}>Ultimate Workspace · Creative Ecosystem</div>
+        <div className={styles.heroBadge}>Ultimate Workspace · Üretkenlik Ekosistemi</div>
         <h1 className={styles.heroTitle}>
-          Build, collaborate &
+          Planla, işbirliği yap &
           <br />
-          <span className={styles.gradientText}>ship faster</span>
+          <span className={styles.gradientText}>daha hızlı bitir</span>
         </h1>
         <p className={styles.heroLead}>
-          AI scoring, realtime chat, boards, notes and teams — one premium dark workspace
-          designed for modern product teams.
+          AI öncelik, anlık mesaj, tahta, not ve ekipler — modern ekipler için tek premium
+          çalışma alanı.
         </p>
         <div className={styles.heroActions}>
           {user ? (
-            <Link href="/feed" className={styles.btnPrimary}>Go to Dashboard</Link>
+            <Link href="/feed" className={styles.btnPrimary}>Panele git</Link>
           ) : (
             <>
-              <Link href="/register" className={styles.btnPrimary}>Start free</Link>
-              <Link href="/login" className={styles.btnGhost}>Sign in</Link>
+              <Link href="/register" className={styles.btnPrimary}>Ücretsiz başla</Link>
+              <Link href="/login" className={styles.btnGhost}>Giriş yap</Link>
             </>
           )}
           <button type="button" className={styles.btnGhost} onClick={() => goProtected('/boards')}>
-            Create project
+            Proje oluştur
           </button>
         </div>
         <div className={styles.heroGlow} aria-hidden />
       </section>
 
       <section id="features" className={styles.features}>
-        <h2 className={styles.sectionTitle}>Everything in one place</h2>
+        <h2 className={styles.sectionTitle}>Hepsi bir arada</h2>
         <p className={styles.sectionLead}>
-          From daily todos to enterprise teams — a cohesive design language and realtime backbone.
+          Günlük todolardan kurumsal ekiplere — tutarlı tasarım dili ve gerçek zamanlı altyapı.
         </p>
         <div className={styles.grid}>
           {FEATURES.map((f) => (
@@ -100,9 +100,9 @@ export default function LandingPage() {
 
       <section id="pricing" className={styles.pricing}>
         <div className={styles.pricingCard}>
-          <h2 className={styles.sectionTitle}>Simple plans</h2>
+          <h2 className={styles.sectionTitle}>Sade planlar</h2>
           <p className={styles.sectionLead}>
-            Free to explore. Pro for power users. Enterprise for teams that need control.
+            Keşfetmek için Free. Güç kullanıcıları için Pro. Kontrol isteyen ekipler için Enterprise.
           </p>
           <div className={styles.planRow}>
             <div className={styles.plan}>
@@ -115,11 +115,11 @@ export default function LandingPage() {
             </div>
             <div className={styles.plan}>
               <span className={styles.planName}>Enterprise</span>
-              <span className={styles.planPrice}>Custom</span>
+              <span className={styles.planPrice}>Özel</span>
             </div>
           </div>
           <Link href={user ? '/billing' : '/register'} className={styles.btnPrimary}>
-            {user ? 'Manage billing' : 'Choose a plan'}
+            {user ? 'Faturalamayı yönet' : 'Plan seç'}
           </Link>
         </div>
       </section>
@@ -128,9 +128,9 @@ export default function LandingPage() {
         <div className={styles.footerInner}>
           <span className={styles.logoText}>BEST Workspace</span>
           <div className={styles.footerLinks}>
-            <Link href="/login">Sign in</Link>
-            <Link href="/register">Register</Link>
-            <a href="#features">Features</a>
+            <Link href="/login">Giriş</Link>
+            <Link href="/register">Kayıt</Link>
+            <a href="#features">Özellikler</a>
           </div>
           <p className={styles.footerCopy}>© {new Date().getFullYear()} BEST · All rights reserved</p>
         </div>

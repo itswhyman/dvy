@@ -18,12 +18,12 @@ function initials(name?: string | null) {
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m`;
+  if (m < 1) return 'şimdi';
+  if (m < 60) return `${m}dk`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
+  if (h < 24) return `${h}sa`;
   const d = Math.floor(h / 24);
-  return `${d}d`;
+  return `${d}g`;
 }
 
 export default function PostList() {
@@ -126,8 +126,8 @@ export default function PostList() {
   return (
     <div className={styles.wrap}>
       <header className={styles.head}>
-        <h1 className={styles.title}>Home</h1>
-        <p className={styles.sub}>Stories · posts · realtime social pulse</p>
+        <h1 className={styles.title}>Akış</h1>
+        <p className={styles.sub}>Hikâyeler · gönderiler · anlık nabız</p>
       </header>
 
       {/* Stories / active people */}
@@ -142,7 +142,7 @@ export default function PostList() {
                 <span className={styles.storyFallback}>{initials(user.name)}</span>
               )}
             </div>
-            <span className={styles.storyName}>You</span>
+            <span className={styles.storyName}>Sen</span>
           </div>
         )}
         {online.map((c) => (
@@ -175,14 +175,14 @@ export default function PostList() {
           )}
           <textarea
             rows={2}
-            placeholder="Share an update with your workspace…"
+            placeholder="Çalışma alanınla bir güncelleme paylaş…"
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
         </div>
         <div className={styles.composerActions}>
           <button className={styles.publish} type="submit" disabled={busy || !content.trim()}>
-            {busy ? 'Posting…' : 'Publish'}
+            {busy ? 'Paylaşılıyor…' : 'Paylaş'}
           </button>
         </div>
       </form>
@@ -190,7 +190,7 @@ export default function PostList() {
       {/* Feed */}
       <div className={styles.feed}>
         {posts.length === 0 && (
-          <div className={styles.empty}>No posts yet. Be the first to share.</div>
+          <div className={styles.empty}>Henüz gönderi yok. İlk paylaşımı sen yap.</div>
         )}
         {posts.map((p) => (
           <article key={p.id} className={styles.card}>
@@ -257,7 +257,7 @@ export default function PostList() {
                 ))}
                 <div className={styles.commentForm}>
                   <input
-                    placeholder="Write a comment…"
+                    placeholder="Yorum yaz…"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     onKeyDown={(e) => {
@@ -268,7 +268,7 @@ export default function PostList() {
                     }}
                   />
                   <button type="button" onClick={() => void submitComment(p.id)}>
-                    Send
+                    Gönder
                   </button>
                 </div>
               </div>

@@ -34,9 +34,9 @@ function dayLabel(iso: string) {
   const today = new Date();
   const yday = new Date();
   yday.setDate(today.getDate() - 1);
-  if (dayKey(iso) === dayKey(today.toISOString())) return 'Today';
-  if (dayKey(iso) === dayKey(yday.toISOString())) return 'Yesterday';
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  if (dayKey(iso) === dayKey(today.toISOString())) return 'Bugün';
+  if (dayKey(iso) === dayKey(yday.toISOString())) return 'Dün';
+  return d.toLocaleDateString('tr-TR', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export default function ChatUI() {
@@ -174,8 +174,8 @@ export default function ChatUI() {
   return (
     <div className={styles.wrap}>
       <header className={styles.head}>
-        <h1 className={styles.title}>Chat</h1>
-        <p className={styles.sub}>Real-time messaging · presence · typing</p>
+        <h1 className={styles.title}>Mesajlar</h1>
+        <p className={styles.sub}>Anlık mesaj · presence · yazıyor…</p>
       </header>
 
       <div className={styles.layout}>
@@ -200,7 +200,7 @@ export default function ChatUI() {
 
         <section className={styles.panel}>
           {!peer ? (
-            <div className={styles.empty}>Select a contact to start chatting</div>
+            <div className={styles.empty}>Sohbete başlamak için bir kişi seç</div>
           ) : (
             <>
               <div className={styles.panelHead}>
@@ -226,7 +226,7 @@ export default function ChatUI() {
                     </div>
                   );
                 })}
-                {typing && <div className={styles.typing}>typing…</div>}
+                {typing && <div className={styles.typing}>yazıyor…</div>}
                 <div ref={bottomRef} />
               </div>
               <form className={styles.composer} onSubmit={send}>
@@ -234,10 +234,10 @@ export default function ChatUI() {
                   className={styles.input}
                   value={text}
                   onChange={(e) => onType(e.target.value)}
-                  placeholder="Message…"
+                  placeholder="Mesaj yaz…"
                 />
                 <button className={styles.send} type="submit">
-                  Send
+                  Gönder
                 </button>
               </form>
             </>

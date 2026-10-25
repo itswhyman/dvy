@@ -32,10 +32,8 @@ export interface Todo {
   title: string;
   description: string | null;
   notes?: string | null;
-  /**
-   * Backend may return legacy string priorities or numeric 0–5 scores.
-   * UI should handle both.
-   */
+  sticker?: string | null;
+  /** 0.0 – 5.0 (0.5 steps) importance rating. Legacy string values may still appear. */
   priority: number | 'low' | 'medium' | 'high' | 'ai_suggested';
   ai_score: number | null;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';

@@ -2,22 +2,17 @@
   "name": "best-workspace",
   "version": "1.0.0",
   "private": true,
-  "description": "BEST Ultimate Workspace & Creative Ecosystem — monorepo",
+  "description": "BEST Ultimate Workspace — monorepo (server + gui)",
   "workspaces": [
     "server",
     "gui"
   ],
   "scripts": {
-    "dev": "concurrently -n server,gui -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w gui\"",
-    "build": "npm run build -w server && npm run build -w gui",
+    "dev:server": "npm run dev -w server",
+    "dev:gui": "npm run dev -w gui",
     "build:server": "npm run build -w server",
     "build:gui": "npm run build -w gui",
-    "start": "concurrently -n server,gui -c cyan,magenta \"npm run start -w server\" \"npm run start -w gui\"",
     "seed": "npm run seed -w server"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.0",
-    "eslint": "^9.0.0"
   },
   "engines": {
     "node": ">=20"

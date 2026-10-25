@@ -99,7 +99,8 @@ CREATE TABLE IF NOT EXISTS todos (
   title         VARCHAR(255) NOT NULL,
   description   TEXT NULL,
   notes         TEXT NULL,
-  priority      DECIMAL(2,1) NOT NULL DEFAULT 0.0 COMMENT '0.0–5.0 step 0.5',
+  sticker       VARCHAR(64) NULL COMMENT 'emoji or sticker key for visual tag',
+  priority      DECIMAL(2,1) NOT NULL DEFAULT 0.0 COMMENT '0.0–5.0 step 0.5 star rating',
   ai_score      DECIMAL(5,2) NULL,
   status        ENUM('pending','in_progress','completed','cancelled') NOT NULL DEFAULT 'pending',
   due_at        DATETIME(3) NULL,
@@ -347,6 +348,15 @@ INSERT INTO subscriptions (user_id, plan, status, post_limit) VALUES
   (2, 'free', 'active', 20),
   (3, 'pro', 'active', 200);
 */
+
+-- ------------------------------------------------------------
+-- Safe migrations for existing databases (idempotent)
+-- ------------------------------------------------------------
+-- ADD sticker column if missing (run once on upgraded installs)
+ALTER TABLE todos
+  ADD COLUMN IF NOT EXISTS sticker VARCHAR(64) NULL
+  COMMENT 'emoji or sticker key for visual tag'
+  AFTER notes;
 
 -- Done.
 SELECT 'BEST schema applied successfully' AS status;

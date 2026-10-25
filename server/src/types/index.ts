@@ -1,7 +1,7 @@
 export type UserRole = 'admin' | 'user' | 'pro_user';
 export type UserStatus = 'online' | 'offline';
-/** Legacy string priorities used by current API */
-export type TodoPriority = 'low' | 'medium' | 'high' | 'ai_suggested' | number;
+/** Star rating 0.0–5.0 in 0.5 steps. Legacy string values still accepted on input. */
+export type TodoPriority = number | 'low' | 'medium' | 'high' | 'ai_suggested';
 export type TodoStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type PlanType = 'free' | 'pro' | 'team' | 'enterprise';
 export type NoteTemplate = 'blank' | 'grid' | 'lined' | 'dotted' | 'music' | 'calendar';
@@ -28,10 +28,11 @@ export interface Todo {
   title: string;
   description: string | null;
   notes?: string | null;
-  priority: TodoPriority;
+  sticker?: string | null;
+  /** 0.0 – 5.0 (step 0.5) importance rating */
+  priority: number;
   ai_score: number | null;
   status: TodoStatus;
-  due_date?: string | null;
   due_at?: string | null;
   sort_order: number;
   completed_at?: string | null;
@@ -104,14 +105,26 @@ export interface Message {
 
 export interface Team {
   id: number;
-  team_name: string;
   name?: string;
+  team_name?: string;
   description?: string | null;
-  lead_user_id: number;
   owner_id?: number;
-  performance_score: number;
-  metrics_json: Record<string, number> | null;
+  lead_user_id?: number;
+  performance_score?: number;
+  metrics_json?: Record<string, number> | null;
   created_at: string;
+}
+
+export interface TeamMember {
+  team_id: number;
+  user_id: number;
+  role: 'owner' | 'manager' | 'member' | string;
+  member_color: string;
+  name?: string;
+  email?: string;
+  avatar_url?: string | null;
+  status?: string;
+  joined_at?: string;
 }
 
 export interface Subscription {

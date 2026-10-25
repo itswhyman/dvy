@@ -80,17 +80,46 @@ export default function NoteEditor() {
     if (active?.id === id) newNote();
   }
 
+  const TEMPLATES: { id: NoteTemplate; label: string; hint: string }[] = [
+    { id: 'blank', label: 'Boş', hint: 'Serbest' },
+    { id: 'grid', label: 'Kareli', hint: 'Grid' },
+    { id: 'lined', label: 'Çizgili', hint: 'Satır' },
+    { id: 'dotted', label: 'Noktalı', hint: 'Dot' },
+    { id: 'music', label: 'Müzik', hint: 'Nota' },
+    { id: 'calendar', label: 'Takvim', hint: 'Ay' },
+  ];
+
   function exportPdf() {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text(title || 'Untitled', 14, 22);
     doc.setFontSize(11);
     doc.setTextColor(100);
-    doc.text(`Category: ${category}`, 14, 32);
+    doc.text(`Category: ${category} · ${template}`, 14, 32);
     doc.setTextColor(30);
     const lines = doc.splitTextToSize(content || '', 180);
     doc.text(lines, 14, 44);
     doc.save(`${(title || 'note').replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  }
+
+  async function runSummarize() {
+    if (!active) {
+      toast.error('Önce notu kaydedin');
+      return;
+    }
+    const res = await api<{ summary?: string }>(`/notes/${active.id}/summarize`, {
+      method: 'POST',
+    });
+    if (res.success && (res.data as any)?.summary) {
+      const summary = (res.data as any).summary as string;
+      setContent((c) => `${c.trim()}\n\n---\nAI Özet:\n${summary}`);
+      toast.success('Özet eklendi');
+    } else if (typeof res.data === 'string') {
+      setContent((c) => `${c.trim()}\n\n---\nAI Özet:\n${res.data}`);
+      toast.success('Özet eklendi');
+    } else {
+      toast.error(res.error || 'Özet alınamadı');
+    }
   }
 
   return (
@@ -98,10 +127,10 @@ export default function NoteEditor() {
       <header className={styles.head}>
         <div>
           <h1 className={styles.title}>Note Studio</h1>
-          <p className={styles.sub}>Rich notes with PDF export</p>
+          <p className={styles.sub}>Şablonlar · AI özet · PDF export</p>
         </div>
         <button type="button" className={styles.newBtn} onClick={newNote}>
-          + New note
+          + Yeni not
         </button>
       </header>
 
@@ -109,7 +138,7 @@ export default function NoteEditor() {
         <aside className={styles.sidebar}>
           <input
             className={styles.search}
-            placeholder="Search notes…"
+            placeholder="Not ara…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -122,29 +151,49 @@ export default function NoteEditor() {
                 onClick={() => select(n)}
               >
                 <strong>{n.title}</strong>
-                <span>{n.category}</span>
+                <span>
+                  {n.template || 'blank'} · {n.category}
+                </span>
               </button>
             ))}
-            {!notes.length && <p className={styles.empty}>No notes yet</p>}
+            {!notes.length && <p className={styles.empty}>Henüz not yok</p>}
           </div>
         </aside>
 
         <form className={styles.editor} onSubmit={save}>
           <input
             className={styles.titleInput}
-            placeholder="Note title"
+            placeholder="Başlık"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
+
+          <div className={styles.templates}>
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`${styles.tplBtn} ${template === t.id ? styles.tplOn : ''}`}
+                onClick={() => setTemplate(t.id)}
+                title={t.hint}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
           <div className={styles.toolbar}>
             <input
               className={styles.catInput}
-              placeholder="Category"
+              placeholder="Kategori"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             />
             <button type="button" className={styles.toolBtn} onClick={exportPdf}>
-              Export PDF
+              PDF
+            </button>
+            <button type="button" className={styles.toolBtn} onClick={() => void runSummarize()}>
+              AI Özet
             </button>
             {active && (
               <button
@@ -152,20 +201,20 @@ export default function NoteEditor() {
                 className={styles.delBtn}
                 onClick={() => remove(active.id)}
               >
-                Delete
+                Sil
               </button>
             )}
           </div>
           <textarea
-            className={styles.body}
-            placeholder="Write your note…"
+            className={`${styles.body} ${styles[`tpl_${template}`] || ''}`}
+            placeholder="Notunu yaz…"
             value={content}
-          data-template={template}
+            data-template={template}
             onChange={(e) => setContent(e.target.value)}
             rows={18}
           />
           <button type="submit" className={styles.saveBtn}>
-            Save note
+            Kaydet
           </button>
         </form>
       </div>

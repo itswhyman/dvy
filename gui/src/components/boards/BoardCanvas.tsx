@@ -166,11 +166,11 @@ export default function BoardCanvas() {
     <div className={styles.wrap}>
       <header className={styles.head}>
         <div>
-          <h1 className={styles.title}>Whiteboard</h1>
-          <p className={styles.sub}>Shapes · lines · text · JSON persistence</p>
+          <h1 className={styles.title}>Yazım Tahtası</h1>
+          <p className={styles.sub}>Şekil · ok · metin · kaydet</p>
         </div>
         <button type="button" className={styles.newBtn} onClick={createBoard}>
-          + New board
+          + Yeni tahta
         </button>
       </header>
 
