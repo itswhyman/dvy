@@ -1,79 +1,70 @@
 /**
- * Production starter for Coolify / single-container deploys.
- * Starts Express API (PORT_API / 4000) + Next.js GUI (PORT).
- * Public traffic hits GUI; Next rewrites /api + /socket.io → API.
+ * Single-container production starter (Coolify / Docker).
+ * - API on PORT_API (default 4000)
+ * - Next.js GUI on PORT (default 3000)  ← public port
  */
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(__dirname, '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const API_PORT = String(process.env.PORT_API || process.env.API_PORT || 4000);
+const GUI_PORT = String(process.env.PORT || process.env.GUI_PORT || 3000);
 
-const API_PORT = process.env.PORT_API || process.env.API_PORT || '4000';
-const GUI_PORT = process.env.PORT || process.env.GUI_PORT || '3000';
+function bin(name, workspace) {
+  const candidates = [
+    path.join(root, 'node_modules', '.bin', name),
+    path.join(root, workspace, 'node_modules', '.bin', name),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return name; // fall back to PATH
+}
 
-function run(name, cwd, command, args, env = {}) {
-  const child = spawn(command, args, {
+function run(label, cwd, cmd, args, extraEnv = {}) {
+  console.log(`[start] ${label}: ${cmd} ${args.join(' ')}`);
+  const child = spawn(cmd, args, {
     cwd,
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...extraEnv },
     stdio: 'inherit',
-    shell: false,
   });
   child.on('exit', (code) => {
-    console.error(`[${name}] exited code=${code}`);
+    console.error(`[${label}] exited (${code})`);
     process.exit(code ?? 1);
   });
   child.on('error', (err) => {
-    console.error(`[${name}] failed:`, err);
+    console.error(`[${label}] spawn error:`, err.message);
     process.exit(1);
   });
   return child;
 }
 
-console.log(`[start-prod] API → :${API_PORT}  |  GUI → :${GUI_PORT}`);
+console.log(`[start-prod] GUI :${GUI_PORT}  |  API :${API_PORT}`);
+console.log(`[start-prod] API_INTERNAL_URL=${process.env.API_INTERNAL_URL || `http://127.0.0.1:${API_PORT}`}`);
 
-// Prefer tsx (no compile), fallback to node dist if present
-const serverEntry = path.join(root, 'server', 'src', 'index.ts');
-const serverDist = path.join(root, 'server', 'dist', 'index.js');
-const useTsx = fs.existsSync(serverEntry);
-const tsxBin = path.join(root, 'node_modules', '.bin', 'tsx');
-const tsxLocal = path.join(root, 'server', 'node_modules', '.bin', 'tsx');
-
-let apiCmd, apiArgs;
-if (useTsx) {
-  const bin = fs.existsSync(tsxBin) ? tsxBin : (fs.existsSync(tsxLocal) ? tsxLocal : 'npx');
-  if (bin === 'npx') {
-    apiCmd = 'npx';
-    apiArgs = ['tsx', 'src/index.ts'];
-  } else {
-    apiCmd = bin;
-    apiArgs = ['src/index.ts'];
-  }
-} else if (fs.existsSync(serverDist)) {
-  apiCmd = 'node';
-  apiArgs = ['dist/index.js'];
-} else {
-  console.error('No server entry found');
-  process.exit(1);
-}
-
-const api = run('server', path.join(root, 'server'), apiCmd, apiArgs, {
+const tsx = bin('tsx', 'server');
+const api = run('api', path.join(root, 'server'), tsx, ['src/index.ts'], {
   PORT: API_PORT,
   NODE_ENV: 'production',
 });
 
+// Give API a moment to bind
 setTimeout(() => {
   const nextBin = path.join(root, 'gui', 'node_modules', 'next', 'dist', 'bin', 'next');
-  const nextRoot = path.join(root, 'node_modules', 'next', 'dist', 'bin', 'next');
-  const nextPath = fs.existsSync(nextBin) ? nextBin : nextRoot;
-  run('gui', path.join(root, 'gui'), 'node', [nextPath, 'start', '-p', String(GUI_PORT)], {
+  const nextBinRoot = path.join(root, 'node_modules', 'next', 'dist', 'bin', 'next');
+  const next = fs.existsSync(nextBin) ? nextBin : nextBinRoot;
+  run('gui', path.join(root, 'gui'), process.execPath, [next, 'start', '-p', GUI_PORT], {
     PORT: GUI_PORT,
     NODE_ENV: 'production',
     API_INTERNAL_URL: process.env.API_INTERNAL_URL || `http://127.0.0.1:${API_PORT}`,
   });
-}, 2000);
+}, 2500);
 
-process.on('SIGTERM', () => { api.kill('SIGTERM'); process.exit(0); });
-process.on('SIGINT', () => { api.kill('SIGINT'); process.exit(0); });
+const shutdown = () => {
+  try { api.kill('SIGTERM'); } catch {}
+  process.exit(0);
+};
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
