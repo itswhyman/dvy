@@ -1,6 +1,6 @@
 {
   "name": "best-workspace",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "BEST Ultimate Workspace — monorepo (server + gui)",
   "workspaces": [
@@ -8,13 +8,21 @@
     "gui"
   ],
   "scripts": {
+    "dev": "npm run dev:server & npm run dev:gui",
     "dev:server": "npm run dev -w server",
     "dev:gui": "npm run dev -w gui",
+    "build": "npm run build -w server && npm run build -w gui",
     "build:server": "npm run build -w server",
     "build:gui": "npm run build -w gui",
+    "start": "node scripts/start-prod.mjs",
+    "start:server": "npm run start -w server",
+    "start:gui": "npm run start -w gui",
     "seed": "npm run seed -w server"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "concurrently": "^9.1.0"
   }
 }
